@@ -9,15 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Russo+One&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">💎 ZINOX</div>
-            <div class="loading-text">Yuklanmoqda...</div>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
-            </div>
-        </div>
+    <!-- Simple Loading Indicator -->
+    <div id="loadingIndicator" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+         background: linear-gradient(135deg, #ff00ff, #00ff88); color: white; padding: 20px 40px; 
+         border-radius: 15px; font-family: 'Orbitron', monospace; font-weight: bold; 
+         z-index: 9999; display: block;">
+        💎 ZINOX - Yuklanmoqda...
     </div>
 
     <!-- Auth Modal -->
@@ -221,13 +218,9 @@
         <footer class="game-footer">
             <div class="footer-nav">
                 <button class="nav-btn active" data-tab="game">🎮 O'YIN</button>
-                <button class="nav-btn" data-tab="leaderboard">🏆 REYTING</button>
-                <button class="nav-btn" data-tab="profile">👤 PROFIL</button>
+                <button class="nav-btn" data-tab="chat">� CHAT</button>
                 <button class="nav-btn" data-tab="missions">🎯 MISSIYALAR</button>
-                <button class="nav-btn" data-tab="chat">💬 CHAT</button>
-                <button class="nav-btn" data-tab="donate">💎 DONAT</button>
-                <button class="nav-btn" data-tab="referral">👥 REFERAL</button>
-                <button class="nav-btn" data-tab="shop">💰 CASH</button>
+                <button class="nav-btn" data-tab="settings">⚙️ SOZLAMALAR</button>
             </div>
 
             <div class="footer-info">
@@ -652,6 +645,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+    <script src="step6-chat.js"></script>
 </body>
 </html>
+   

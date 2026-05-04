@@ -3,6 +3,20 @@
 // Version: 1.0 Production Ready
 
 class ZinoxGames {
+    // Helper methods - must be defined before constructor
+    generateUserId() {
+        return Math.floor(100000 + Math.random() * 900000).toString();
+    }
+
+    generateReferralCode() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let code = '';
+        for (let i = 0; i < 8; i++) {
+            code += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return code;
+    }
+
     constructor() {
         // Game State
         this.gameState = {
@@ -67,66 +81,73 @@ class ZinoxGames {
         // DOM Elements
         this.elements = {};
         
-        // Initialize
-        this.init();
+        // Initialize - don't call async from constructor
+        // this.init() will be called separately
+        console.log('🏗️ ZinoxGames constructor completed');
+        
+        // Auto-start initialization after constructor
+        setTimeout(() => {
+            this.init().catch(error => {
+                console.error('❌ Auto-init failed:', error);
+            });
+        }, 100);
     }
 
     async init() {
         console.log('🎮 Zinox Games ishga tushirilmoqda...');
         
-        // Loading screen
-        this.showLoadingScreen();
-        
-        // Simulate loading progress
-        await this.simulateLoadingProgress();
-        
-        // Initialize elements
-        this.updateLoadingText('Elementlar yuklanmoqda...');
-        this.initializeElements();
-        
-        // Load saved game state
-        this.updateLoadingText('O\'yin holati yuklanmoqda...');
-        await this.loadGameState();
-        
-        // Setup event listeners
-        this.updateLoadingText('Tadbirlar sozlanmoqda...');
-        this.setupEventListeners();
-        
-        // Initialize systems
-        this.updateLoadingText('Tizimlar ishga tushirilmoqda...');
-        this.initializeSystems();
-        
-        // Start game loops
-        this.updateLoadingText('O\'yin tsikllari yoqilmoqda...');
-        this.startGameLoops();
-        
-        // Complete loading
-        this.updateLoadingProgress(100);
-        this.updateLoadingText('O\'in tayyor!');
-        
-        // Hide loading screen and show auth if not authenticated
-        setTimeout(() => {
-            this.hideLoadingScreen();
+        try {
+            // Simple initialization - no loading screen
+            console.log('📦 Elementlar yuklanmoqda...');
+            this.initializeElements();
             
+            console.log('💾 O\'yin holati yuklanmoqda...');
+            await this.loadGameState();
+            
+            console.log('🔧 Tadbirlar sozlanmoqda...');
+            this.setupEventListeners();
+            
+            console.log('⚙️ Tizimlar ishga tushirilmoqda...');
+            this.initializeSystems();
+            
+            console.log('🔄 O\'yin tsikllari yoqilmoqda...');
+            this.startGameLoops();
+            
+            console.log('✅ O\'in tayyor!');
+            
+            // Hide simple loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            // Show auth if not authenticated
             if (!this.gameState.isAuthenticated) {
                 this.openModal('auth');
             } else {
                 this.showNotification('🎮 O\'yin yuklandi! Omad!', 'success');
             }
-        }, 1000);
+            
+            console.log('🎯 O\'yin muvaffaqiyatli yuklandi va ishga tushdi');
+            
+        } catch (error) {
+            console.error('❌ Initialization error:', error);
+            
+            // Hide loading indicator even on error
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            // Show error message
+            this.showNotification('❌ O\'yin yuklashda xatolik. Qayta yuklang.', 'error');
+        }
     }
 
     showLoadingScreen() {
         const loadingScreen = document.getElementById('loadingScreen');
         if (loadingScreen) {
             loadingScreen.style.display = 'flex';
-            loadingScreen.style.opacity = '1';
-            
-            // Reset progress
-            this.updateLoadingProgress(0);
-            this.updateLoadingText('Yuklanmoqda...');
-        } else {
-            console.warn('⚠️ Loading screen elementi topilmadi');
         }
     }
 
@@ -137,8 +158,6 @@ class ZinoxGames {
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
             }, 500);
-        } else {
-            console.warn('⚠️ Loading screen elementi topilmadi');
         }
     }
 
@@ -158,20 +177,14 @@ class ZinoxGames {
     }
 
     updateLoadingProgress(progress) {
-        let progressBar = document.querySelector('.loading-progress');
-        if (!progressBar) {
-            progressBar = document.getElementById('loadingProgress');
-        }
+        const progressBar = document.querySelector('.loading-progress');
         if (progressBar) {
             progressBar.style.width = `${progress}%`;
         }
     }
 
     updateLoadingText(text) {
-        let loadingText = document.querySelector('.loading-text');
-        if (!loadingText) {
-            loadingText = document.getElementById('loadingText');
-        }
+        const loadingText = document.querySelector('.loading-text');
         if (loadingText) {
             loadingText.textContent = text;
         }
@@ -1347,19 +1360,6 @@ class ZinoxGames {
         return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
     }
 
-    generateUserId() {
-        return Math.floor(100000 + Math.random() * 900000).toString();
-    }
-
-    generateReferralCode() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let code = '';
-        for (let i = 0; i < 8; i++) {
-            code += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return code;
-    }
-
     // Profile functions
     updateProfileDisplay() {
         const profileUsername = document.getElementById('profileUsername');
@@ -2079,6 +2079,44 @@ class ZinoxGames {
 }
 
 // Initialize game when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.zinoxGame = new ZinoxGames();
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🔥 DOMContentLoaded event triggered');
+    
+    // Only create instance if not already created
+    if (!window.zinoxGame) {
+        try {
+            console.log('🏗️ Creating ZinoxGames instance...');
+            window.zinoxGame = new ZinoxGames();
+            console.log('✅ ZinoxGames instance created successfully');
+        } catch (error) {
+            console.error('❌ Failed to create ZinoxGames instance:', error);
+            console.error('Error details:', error.stack);
+            
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            if (loadingIndicator) {
+                loadingIndicator.style.display = 'none';
+            }
+        }
+    } else {
+        console.log('✅ ZinoxGames already exists');
+    }
+});
+
+// Fallback - agar DOMContentLoaded ishlamasa
+window.addEventListener('load', function() {
+    console.log('🔥 Window load event triggered');
+    
+    if (!window.zinoxGame) {
+        console.warn('⚠️ ZinoxGames not initialized, trying fallback...');
+        try {
+            window.zinoxGame = new ZinoxGames();
+            console.log('✅ Fallback initialization successful');
+        } catch (error) {
+            console.error('❌ Fallback initialization failed:', error);
+            console.error('Fallback error details:', error.stack);
+        }
+    } else {
+        console.log('✅ ZinoxGames already initialized');
+    }
 });
