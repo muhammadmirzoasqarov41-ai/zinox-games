@@ -45,121 +45,131 @@ const gameState = {
 };
 
 // Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', function() {
     console.log('🔥 Step 6: DOM loaded');
     
-    // Initialize Supabase and load game state
-    await initializeSupabase();
-    
-    // Hide loading indicator
-    const loadingIndicator = document.getElementById('loadingIndicator');
-    if (loadingIndicator) {
-        loadingIndicator.style.display = 'none';
-        console.log('✅ Loading indicator hidden');
-    }
-    
-    // Show auth modal
-    const authModal = document.getElementById('authModal');
-    if (authModal) {
-        authModal.style.display = 'flex';
-        console.log('✅ Auth modal shown');
-    }
-    
-    // Setup tap functionality with combo
-    const tapArea = document.getElementById('tapArea');
-    if (tapArea) {
-        tapArea.addEventListener('click', function(event) {
-            // Check energy
-            if (gameState.energy <= 0) {
-                showNotification('⚡ Energy yo\'q! Kuting...', 'warning');
-                return;
-            }
-            
-            // Consume energy
-            gameState.energy = Math.max(0, gameState.energy - 1);
-            
-            // Handle combo system
-            handleCombo();
-            
-            // Calculate tokens with upgrades and combo
-            const baseTokens = gameState.tapPower * gameState.multiplierLevel;
-            const comboMultiplier = gameState.comboSystem.multiplier;
-            const tokensEarned = Math.floor(baseTokens * comboMultiplier);
-            
-            gameState.zinoxTokens += tokensEarned;
-            
-            updateDisplay();
-            
-            // Play tap sound with combo effect
-            playTapSound(comboMultiplier > 1);
-            
-            // Create token effects
-            const effectCount = Math.min(Math.max(1, Math.floor(comboMultiplier)), 8);
-            for (let i = 0; i < effectCount; i++) {
-                setTimeout(() => {
-                    createTokenEffect(
-                        event.clientX + (Math.random() - 0.5) * 80,
-                        event.clientY + (Math.random() - 0.5) * 80,
-                        comboMultiplier > 1
-                    );
-                }, i * 50);
-            }
-            
-            // Vibration effect
-            if (gameState.vibrationEnabled && navigator.vibrate) {
-                const vibrationPattern = comboMultiplier > 1 ? [50, 30, 50] : 50;
-                navigator.vibrate(vibrationPattern);
-                console.log('📳 Vibration triggered');
-            }
-            
-            console.log('💎 Tokens earned:', tokensEarned, 'Combo:', comboMultiplier + 'x', 'Total:', gameState.zinoxTokens);
-        });
-        console.log('✅ Tap area with combo setup complete');
-    } else {
-        console.warn('⚠️ Tap area not found');
-    }
-    
-    // Setup auth
-    const signInBtn = document.getElementById('signInBtn');
-    if (signInBtn) {
-        signInBtn.addEventListener('click', function() {
-            const username = document.getElementById('signInNickname')?.value || 'Player';
-            gameState.username = username;
-            gameState.isAuthenticated = true;
-            
-            // Hide auth modal
-            if (authModal) {
-                authModal.style.display = 'none';
-            }
-            
-            updateDisplay();
-            console.log('✅ User authenticated:', username);
-        });
-        console.log('✅ Sign in button setup complete');
-    } else {
-        console.warn('⚠️ Sign in button not found');
-    }
-    
-    // Setup upgrade buttons
-    setupUpgradeButtons();
-    
-    // Setup dashboard navigation buttons
-    setupDashboardButtons();
-    
-    // Setup chat system
-    setupChatSystem();
-    
-    // Start energy regeneration
-    startEnergyRegeneration();
-    
-    // Start combo timer
-    startComboTimer();
-    
-    // Add CSS animations
-    addEffectStyles();
-    
-    updateDisplay();
-    console.log('✅ Step 6: Zinox Games with chat ready!');
+    // Initialize Supabase and load game state (with timeout protection)
+    Promise.race([
+        initializeSupabase(),
+        new Promise((resolve) => setTimeout(resolve, 5000)) // 5 second timeout
+    ]).finally(() => {
+        // Always hide loading indicator after initialization or timeout
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+            console.log('✅ Loading indicator hidden');
+        }
+        
+        // Show auth modal
+        const authModal = document.getElementById('authModal');
+        if (authModal) {
+            authModal.style.display = 'flex';
+            console.log('✅ Auth modal shown');
+        }
+    }).then(() => {
+        // Setup tap functionality with combo
+        const tapArea = document.getElementById('tapArea');
+        if (tapArea) {
+            tapArea.addEventListener('click', function(event) {
+                // Check energy
+                if (gameState.energy <= 0) {
+                    showNotification('⚡ Energy yo\'q! Kuting...', 'warning');
+                    return;
+                }
+                
+                // Consume energy
+                gameState.energy = Math.max(0, gameState.energy - 1);
+                
+                // Handle combo system
+                handleCombo();
+                
+                // Calculate tokens with upgrades and combo
+                const baseTokens = gameState.tapPower * gameState.multiplierLevel;
+                const comboMultiplier = gameState.comboSystem.multiplier;
+                const tokensEarned = Math.floor(baseTokens * comboMultiplier);
+                
+                gameState.zinoxTokens += tokensEarned;
+                
+                updateDisplay();
+                
+                // Play tap sound with combo effect
+                playTapSound(comboMultiplier > 1);
+                
+                // Create token effects
+                const effectCount = Math.min(Math.max(1, Math.floor(comboMultiplier)), 8);
+                for (let i = 0; i < effectCount; i++) {
+                    setTimeout(() => {
+                        createTokenEffect(
+                            event.clientX + (Math.random() - 0.5) * 80,
+                            event.clientY + (Math.random() - 0.5) * 80,
+                            comboMultiplier > 1
+                        );
+                    }, i * 50);
+                }
+                
+                // Vibration effect
+                if (gameState.vibrationEnabled && navigator.vibrate) {
+                    const vibrationPattern = comboMultiplier > 1 ? [50, 30, 50] : 50;
+                    navigator.vibrate(vibrationPattern);
+                    console.log('📳 Vibration triggered');
+                }
+                
+                console.log('💎 Tokens earned:', tokensEarned, 'Combo:', comboMultiplier + 'x', 'Total:', gameState.zinoxTokens);
+            });
+            console.log('✅ Tap area with combo setup complete');
+        } else {
+            console.warn('⚠️ Tap area not found');
+        }
+        
+        // Setup auth
+        const signInBtn = document.getElementById('signInBtn');
+        if (signInBtn) {
+            signInBtn.addEventListener('click', function() {
+                const username = document.getElementById('signInNickname')?.value || 'Player';
+                gameState.username = username;
+                gameState.isAuthenticated = true;
+                
+                // Hide auth modal
+                if (authModal) {
+                    authModal.style.display = 'none';
+                }
+                
+                updateDisplay();
+                console.log('✅ User authenticated:', username);
+            });
+            console.log('✅ Sign in button setup complete');
+        } else {
+            console.warn('⚠️ Sign in button not found');
+        }
+        
+        // Setup upgrade buttons
+        setupUpgradeButtons();
+        
+        // Setup dashboard navigation buttons
+        setupDashboardButtons();
+        
+        // Setup chat system
+        setupChatSystem();
+        
+        // Start energy regeneration
+        startEnergyRegeneration();
+        
+        // Start combo timer
+        startComboTimer();
+        
+        // Add CSS animations
+        addEffectStyles();
+        
+        updateDisplay();
+        console.log('✅ Step 6: Zinox Games with chat ready!');
+    }).catch((error) => {
+        console.error('❌ Error during game initialization:', error);
+        // Still hide loading indicator even if there's an error
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        if (loadingIndicator) {
+            loadingIndicator.style.display = 'none';
+        }
+    });
 });
 
 function setupChatSystem() {
@@ -1022,6 +1032,9 @@ let supabase = null;
 
 async function initializeSupabase() {
     try {
+        // Wait a bit for Supabase to load (in case CDN is slow)
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
         // Check if Supabase is available
         if (typeof window.supabase === 'undefined') {
             console.warn('⚠️ Supabase not available, using localStorage');
@@ -1036,6 +1049,16 @@ async function initializeSupabase() {
         supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
         console.log('✅ Supabase initialized');
         
+        // Test connection
+        const { data, error } = await supabase.from('game_states').select('count').limit(1);
+        if (error) {
+            console.warn('⚠️ Supabase connection test failed, using localStorage:', error);
+            loadFromLocalStorage();
+            return;
+        }
+        
+        console.log('✅ Supabase connection test passed');
+        
         // Load saved game state
         await loadGameState();
         
@@ -1049,6 +1072,7 @@ async function initializeSupabase() {
 // Load game state from Supabase
 async function loadGameState() {
     if (!supabase) {
+        console.log('📦 Supabase not available, loading from localStorage');
         loadFromLocalStorage();
         return;
     }
@@ -1059,29 +1083,44 @@ async function loadGameState() {
         if (!userId) {
             userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             localStorage.setItem('zinoxUserId', userId);
+            console.log('🆔 Created new user ID:', userId);
         }
         
-        // Load from Supabase
-        const { data, error } = await supabase
+        console.log('🔍 Loading game state for user:', userId);
+        
+        // Load from Supabase with timeout
+        const loadPromise = supabase
             .from('game_states')
             .select('*')
             .eq('user_id', userId)
             .single();
             
-        if (error && error.code !== 'PGRST116') {
-            console.error('❌ Error loading from Supabase:', error);
-            loadFromLocalStorage();
-            return;
-        }
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Supabase load timeout')), 3000)
+        );
         
-        if (data) {
+        const { data, error } = await Promise.race([loadPromise, timeoutPromise]);
+            
+        if (error) {
+            if (error.code === 'PGRST116') {
+                console.log('👋 First time user, creating new state');
+                await saveGameState();
+            } else {
+                console.error('❌ Error loading from Supabase:', error);
+                loadFromLocalStorage();
+                return;
+            }
+        } else if (data) {
             // Load saved state
-            Object.assign(gameState, data.game_state);
-            console.log('✅ Game state loaded from Supabase');
-        } else {
-            // First time user
-            console.log('👋 First time user, creating new state');
-            await saveGameState();
+            if (data.game_state && typeof data.game_state === 'object') {
+                Object.assign(gameState, data.game_state);
+                console.log('✅ Game state loaded from Supabase');
+            } else {
+                console.warn('⚠️ Invalid game state format, using localStorage');
+                loadFromLocalStorage();
+                return;
+            }
         }
         
         updateDisplay();
