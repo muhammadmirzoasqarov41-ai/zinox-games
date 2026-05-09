@@ -9,15 +9,12 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Russo+One&display=swap" rel="stylesheet">
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">💎 ZINOX</div>
-            <div class="loading-text">Yuklanmoqda...</div>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
-            </div>
-        </div>
+    <!-- Simple Loading Indicator -->
+    <div id="loadingIndicator" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+         background: linear-gradient(135deg, #ff00ff, #00ff88); color: white; padding: 20px 40px; 
+         border-radius: 15px; font-family: 'Orbitron', monospace; font-weight: bold; 
+         z-index: 9999; display: block;">
+        💎 ZINOX - Yuklanmoqda...
     </div>
 
     <!-- Auth Modal -->
@@ -40,6 +37,10 @@
                         <small>⚠️ To'g'ri raqam kiriting, aks holda donat qilishga ta'sir qilishi mumkin!</small>
                     </div>
                     <div class="form-group">
+                        <label>🔒 Parol:</label>
+                        <input type="password" id="signInPassword" placeholder="Parol..." minlength="4" maxlength="32">
+                    </div>
+                    <div class="form-group">
                         <label>📱 Telegram username:</label>
                         <input type="text" id="signInTelegram" placeholder="@username" maxlength="50">
                     </div>
@@ -60,6 +61,14 @@
                     <div class="form-group">
                         <label>📱 Telegram username:</label>
                         <input type="text" id="signUpTelegram" placeholder="@username" maxlength="50">
+                    </div>
+                    <div class="form-group">
+                        <label>🔒 Parol:</label>
+                        <input type="password" id="signUpPassword" placeholder="Kamida 4 ta belgi..." minlength="4" maxlength="32">
+                    </div>
+                    <div class="form-group">
+                        <label>🔐 Parolni tasdiqlang:</label>
+                        <input type="password" id="signUpPasswordConfirm" placeholder="Parolni qayta kiriting..." minlength="4" maxlength="32">
                     </div>
                     <button class="auth-btn" id="signUpBtn">RO'YXATDAN O'TISH</button>
                 </div>
@@ -110,11 +119,8 @@
                         <div class="tap-text">BOSHING</div>
                         <div class="tap-value">+<span id="tapValue">1</span></div>
                     </div>
-                    <div class="combo-display" id="comboDisplay">
-                        <div class="combo-text">COMBO x<span id="comboMultiplier">1</span></div>
-                        <div class="combo-bar">
-                            <div class="combo-progress" id="comboProgress"></div>
-                        </div>
+                    <div class="turbo-display" id="turboDisplay" style="display: none;">
+                        <div class="turbo-text">🚀 TURBO MODE</div>
                     </div>
                 </div>
                 
@@ -158,60 +164,46 @@
                 </div>
 
                 <div class="shop-grid">
-                    <!-- Tap Power Upgrade -->
+                    <!-- Tap Power Upgrade (Cash Only) -->
                     <div class="upgrade-card" data-upgrade="tapPower">
                         <div class="upgrade-icon">💪</div>
                         <div class="upgrade-info">
                             <h3 class="upgrade-title">Bosish kuchi</h3>
-                            <p class="upgrade-description">Har bir bosish +<span id="tapPowerLevel">1</span> token</p>
+                            <p class="upgrade-description">Har bir bosish +<span id="cashTapPowerLevel">0</span> token</p>
                             <div class="upgrade-cost">
                                 <span class="cost-icon">$</span>
-                                <span class="cost-amount" id="tapPowerCost">4</span>
+                                <span class="cost-amount" id="cashTapCost">4</span>
                             </div>
                         </div>
-                        <button class="upgrade-btn" id="buyTapPower">SOTIB OLISH</button>
+                        <button class="upgrade-btn" id="buyCashTapPower">SOTIB OLISH</button>
                     </div>
 
-                    <!-- Auto Clicker Upgrade -->
-                    <div class="upgrade-card" data-upgrade="autoClicker">
-                        <div class="upgrade-icon">🤖</div>
-                        <div class="upgrade-info">
-                            <h3 class="upgrade-title">Avtomatik bosish</h3>
-                            <p class="upgrade-description">Sekundiga +<span id="autoClickerLevel">0</span> token</p>
-                            <div class="upgrade-cost">
-                                <span class="cost-icon">$</span>
-                                <span class="cost-amount" id="autoClickerCost">8</span>
-                            </div>
-                        </div>
-                        <button class="upgrade-btn" id="buyAutoClicker">SOTIB OLISH</button>
-                    </div>
-
-                    <!-- Multiplier Upgrade -->
+                    <!-- Multiplier Upgrade (Cash Only) -->
                     <div class="upgrade-card" data-upgrade="multiplier">
                         <div class="upgrade-icon">✨</div>
                         <div class="upgrade-info">
                             <h3 class="upgrade-title">Ko'paytirgich</h3>
-                            <p class="upgrade-description">Barcha ishlash x<span id="multiplierLevel">1</span></p>
+                            <p class="upgrade-description">Barcha ishlash x<span id="cashMultiplierLevel">1</span></p>
                             <div class="upgrade-cost">
                                 <span class="cost-icon">$</span>
-                                <span class="cost-amount" id="multiplierCost">16</span>
+                                <span class="cost-amount" id="cashMultiplierCost">16</span>
                             </div>
                         </div>
-                        <button class="upgrade-btn" id="buyMultiplier">SOTIB OLISH</button>
+                        <button class="upgrade-btn" id="buyCashMultiplier">SOTIB OLISH</button>
                     </div>
 
-                    <!-- Combo Master Upgrade -->
-                    <div class="upgrade-card" data-upgrade="comboMaster">
-                        <div class="upgrade-icon">🔥</div>
+                    <!-- Turbo Mode Upgrade -->
+                    <div class="upgrade-card" data-upgrade="turbo">
+                        <div class="upgrade-icon">🚀</div>
                         <div class="upgrade-info">
-                            <h3 class="upgrade-title">Combo ustasi</h3>
-                            <p class="upgrade-description">Combo vaqti +<span id="comboLevel">0</span> sekund</p>
+                            <h3 class="upgrade-title">Turbo Mode</h3>
+                            <p class="upgrade-description">15 soniya unlimited energy +5 bonus token</p>
                             <div class="upgrade-cost">
                                 <span class="cost-icon">$</span>
-                                <span class="cost-amount" id="comboCost">32</span>
+                                <span class="cost-amount" id="turboCost">10</span>
                             </div>
                         </div>
-                        <button class="upgrade-btn" id="buyComboMaster">SOTIB OLISH</button>
+                        <button class="upgrade-btn" id="buyTurbo">TURBO MODE</button>
                     </div>
                 </div>
             </section>
@@ -221,13 +213,9 @@
         <footer class="game-footer">
             <div class="footer-nav">
                 <button class="nav-btn active" data-tab="game">🎮 O'YIN</button>
-                <button class="nav-btn" data-tab="leaderboard">🏆 REYTING</button>
-                <button class="nav-btn" data-tab="profile">👤 PROFIL</button>
-                <button class="nav-btn" data-tab="missions">🎯 MISSIYALAR</button>
                 <button class="nav-btn" data-tab="chat">💬 CHAT</button>
-                <button class="nav-btn" data-tab="donate">💎 DONAT</button>
-                <button class="nav-btn" data-tab="referral">👥 REFERAL</button>
-                <button class="nav-btn" data-tab="shop">💰 CASH</button>
+                <button class="nav-btn" data-tab="missions">🎯 MISSIYALAR</button>
+                <button class="nav-btn" data-tab="settings">⚙️ SOZLAMALAR</button>
             </div>
 
             <div class="footer-info">
@@ -652,6 +640,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+    <script src="working-version-final.js"></script>
 </body>
 </html>
+   

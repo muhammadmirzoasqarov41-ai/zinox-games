@@ -9,6 +9,9 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE TABLE IF NOT EXISTS players (
     id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
+    phone VARCHAR(20) UNIQUE,
+    telegram VARCHAR(50),
+    password_hash TEXT,
     zinox_tokens BIGINT DEFAULT 0,
     cash_balance INTEGER DEFAULT 0,
     tap_power INTEGER DEFAULT 1,
@@ -25,6 +28,14 @@ CREATE TABLE IF NOT EXISTS players (
     last_seen TIMESTAMPTZ DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Chat messages table
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    player_username VARCHAR(50) REFERENCES players(username),
+    message TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Cash transactions table
@@ -112,6 +123,7 @@ CREATE TABLE IF NOT EXISTS referral_tracking (
 
 -- Create indexes for performance
 CREATE INDEX IF NOT EXISTS idx_players_username ON players(username);
+CREATE INDEX IF NOT EXISTS idx_players_phone ON players(phone);
 CREATE INDEX IF NOT EXISTS idx_players_referral_code ON players(referral_code);
 CREATE INDEX IF NOT EXISTS idx_players_is_online ON players(is_online);
 CREATE INDEX IF NOT EXISTS idx_players_zinox_tokens ON players(zinox_tokens DESC);
@@ -130,6 +142,7 @@ CREATE INDEX IF NOT EXISTS idx_security_logs_severity ON security_logs(severity)
 CREATE INDEX IF NOT EXISTS idx_analytics_events_player ON analytics_events(player_username);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_type ON analytics_events(event_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_created_at ON analytics_events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at DESC);
 
 -- Create updated_at trigger function
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -157,6 +170,7 @@ ALTER TABLE game_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE security_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE analytics_events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE referral_tracking ENABLE ROW LEVEL SECURITY;
+ALTER TABLE chat_messages ENABLE ROW LEVEL SECURITY;
 
 -- Players table RLS policies
 CREATE POLICY "Users can view their own data" ON players
@@ -172,9 +186,27 @@ CREATE POLICY "Users can insert their own data" ON players
 CREATE POLICY "Public read access for leaderboard" ON players
     FOR SELECT USING (true);
 
+CREATE POLICY "Public insert access for players" ON players
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Public update access for players" ON players
+    FOR UPDATE USING (true);
+
+CREATE POLICY "Public read access for chat" ON chat_messages
+    FOR SELECT USING (true);
+
+CREATE POLICY "Public insert access for chat" ON chat_messages
+    FOR INSERT WITH CHECK (true);
+
 -- Cash transactions RLS policies
 CREATE POLICY "Users can view their own transactions" ON cash_transactions
     FOR SELECT USING (auth.uid()::text = player_username);
+
+CREATE POLICY "Public read access for cash transactions" ON cash_transactions
+    FOR SELECT USING (true);
+
+CREATE POLICY "Public insert access for cash transactions" ON cash_transactions
+    FOR INSERT WITH CHECK (true);
 
 CREATE POLICY "Admins can view all transactions" ON cash_transactions
     FOR SELECT USING (
@@ -203,6 +235,12 @@ CREATE POLICY "Admins can view all security logs" ON security_logs
             WHERE username = auth.uid()::text AND is_active = true
         )
     );
+
+CREATE POLICY "Public read access for security logs" ON security_logs
+    FOR SELECT USING (true);
+
+CREATE POLICY "Public insert access for security logs" ON security_logs
+    FOR INSERT WITH CHECK (true);
 
 -- Insert initial system settings
 INSERT INTO system_settings (setting_key, setting_value, description) VALUES
@@ -349,6 +387,7 @@ GRANT ALL ON cash_transactions TO anon, authenticated;
 GRANT ALL ON game_sessions TO anon, authenticated;
 GRANT ALL ON analytics_events TO anon, authenticated;
 GRANT ALL ON referral_tracking TO anon, authenticated;
+GRANT ALL ON chat_messages TO anon, authenticated;
 GRANT SELECT ON leaderboard_view TO anon, authenticated;
 GRANT SELECT ON admin_stats_view TO authenticated;
 
