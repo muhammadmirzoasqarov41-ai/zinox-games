@@ -223,6 +223,7 @@
                     <span class="online-dot"></span>
                     <span id="onlineCount">1,234</span> o'yinchi online
                 </div>
+                <button class="admin-access-btn" id="adminAccessBtn">👑 Admin</button>
             </div>
         </footer>
     </div>
@@ -629,7 +630,251 @@
                     <input type="checkbox" id="vibrationToggle" checked>
                 </div>
                 <div class="setting-item">
+                    <label>Til:</label>
+                    <select id="languageSelect">
+                        <option value="uz">O'zbekcha</option>
+                        <option value="ru">Русский</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Mavzu:</label>
+                    <select id="themeSelect">
+                        <option value="dark">Qora</option>
+                        <option value="light">Oq</option>
+                        <option value="auto">Avtomatik</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>Push bildirishnomalar:</label>
+                    <input type="checkbox" id="pushNotifications" checked>
+                </div>
+                <div class="setting-item">
+                    <label>Ma'lumotlarni avtomatik saqlash:</label>
+                    <input type="checkbox" id="autoSave" checked>
+                </div>
+                <div class="setting-item">
                     <button class="save-settings-btn" id="saveSettings">SAQLASH</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="adminLoginModal" class="modal">
+        <div class="modal-content admin-modal">
+            <div class="modal-header">
+                <h2>🔐 ADMIN PANEL</h2>
+                <button class="close-btn" id="closeAdminLogin">✖️</button>
+            </div>
+            <div class="admin-login-content">
+                <div class="admin-form">
+                    <div class="form-group">
+                        <label>👑 Admin login:</label>
+                        <input type="text" id="adminUsername" placeholder="Admin login...">
+                    </div>
+                    <div class="form-group">
+                        <label>🔐 Admin parol:</label>
+                        <input type="password" id="adminPassword" placeholder="Admin parol...">
+                    </div>
+                    <button class="admin-login-btn" id="adminLoginBtn">KIRISH</button>
+                </div>
+                <div class="admin-info">
+                    <p>⚠️ Faqat adminlar uchun!</p>
+                    <p>Karta raqam: 6262570147192514</p>
+                    <p>Telegram: @cyberscmmr</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel Modal -->
+    <div id="adminPanelModal" class="modal">
+        <div class="modal-content admin-panel">
+            <div class="modal-header">
+                <h2>👑 ADMIN PANEL</h2>
+                <button class="close-btn" id="closeAdminPanel">✖️</button>
+            </div>
+            <div class="admin-panel-content">
+                <div class="admin-tabs">
+                    <button class="admin-tab active" data-tab="users">👥 FOYDALANUVCHILAR</button>
+                    <button class="admin-tab" data-tab="donate">💰 DONATE</button>
+                    <button class="admin-tab" data-tab="ads">📢 REKLAMALAR</button>
+                    <button class="admin-tab" data-tab="missions">🎯 MISSIYALAR</button>
+                    <button class="admin-tab" data-tab="settings">⚙️ SOZLAMALAR</button>
+                </div>
+                
+                <!-- Users Tab -->
+                <div class="admin-tab-content active" id="usersTab">
+                    <div class="admin-section">
+                        <h3>Foydalanuvchilar boshqaruvi</h3>
+                        <div class="user-search">
+                            <input type="text" id="userSearchInput" placeholder="User ID yoki username...">
+                            <button id="searchUserBtn">QIDIRISH</button>
+                        </div>
+                        <div class="user-actions">
+                            <div class="action-group">
+                                <label>User ID:</label>
+                                <input type="text" id="selectedUserId" placeholder="5 xonalik ID">
+                                <label>Cash miqdori:</label>
+                                <input type="number" id="donateAmount" placeholder="Cash miqdori">
+                                <button class="admin-btn" id="donateToUserBtn">DONATE QILISH</button>
+                            </div>
+                        </div>
+                        <div class="users-list" id="adminUsersList">
+                            <!-- Users will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Donate Tab -->
+                <div class="admin-tab-content" id="donateTab">
+                    <div class="admin-section">
+                        <h3>Projectga donat qilish</h3>
+                        <div class="donate-form">
+                            <div class="form-group">
+                                <label>To'lov usuli:</label>
+                                <select id="paymentMethod">
+                                    <option value="card">Karta (6262570147192514)</option>
+                                    <option value="telegram">Telegram (@cyberscmmr)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Cash miqdori:</label>
+                                <input type="number" id="projectDonateAmount" placeholder="Cash miqdori">
+                            </div>
+                            <div class="form-group">
+                                <label>Izoh:</label>
+                                <textarea id="donateNote" placeholder="Izoh..."></textarea>
+                            </div>
+                            <button class="admin-btn" id="projectDonateBtn">PROJECTGA DONATE QILISH</button>
+                        </div>
+                        <div class="donate-stats">
+                            <h4>Donat statistikasi</h4>
+                            <div class="stat-item">
+                                <span>Jami donatlar:</span>
+                                <span id="totalDonates">0 $</span>
+                            </div>
+                            <div class="stat-item">
+                                <span>Oxirgi donat:</span>
+                                <span id="lastDonate">Yo'q</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ads Tab -->
+                <div class="admin-tab-content" id="adsTab">
+                    <div class="admin-section">
+                        <h3>Reklamalar boshqaruvi</h3>
+                        <div class="ad-upload">
+                            <div class="form-group">
+                                <label>Reklama turi:</label>
+                                <select id="adType">
+                                    <option value="video">Video (ovozi bilan)</option>
+                                    <option value="image">Rasm</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Reklama fayli:</label>
+                                <input type="file" id="adFile" accept="video/*,image/*">
+                            </div>
+                            <div class="form-group">
+                                <label>Reklama nomi:</label>
+                                <input type="text" id="adTitle" placeholder="Reklama nomi">
+                            </div>
+                            <div class="form-group">
+                                <label>Reklama havolasi:</label>
+                                <input type="url" id="adLink" placeholder="https://...">
+                            </div>
+                            <div class="form-group">
+                                <label>Ko'rsatish vaqti (sekund):</label>
+                                <input type="number" id="adDuration" value="15" min="5" max="60">
+                            </div>
+                            <button class="admin-btn" id="uploadAdBtn">REKLAMANI YUKLASH</button>
+                        </div>
+                        <div class="ads-list" id="adminAdsList">
+                            <!-- Ads will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Missions Tab -->
+                <div class="admin-tab-content" id="missionsTab">
+                    <div class="admin-section">
+                        <h3>Missiyalar boshqaruvi</h3>
+                        <div class="mission-form">
+                            <div class="form-group">
+                                <label>Missiya turi:</label>
+                                <select id="missionType">
+                                    <option value="daily">Kunlik</option>
+                                    <option value="weekly">Haftalik</option>
+                                    <option value="special">Maxsus</option>
+                                    <option value="channel">Kanalga obuna</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Missiya nomi:</label>
+                                <input type="text" id="missionTitle" placeholder="Missiya nomi">
+                            </div>
+                            <div class="form-group">
+                                <label>Missiya tavsifi:</label>
+                                <textarea id="missionDescription" placeholder="Missiya tavsifi"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Missiya maqsadi:</label>
+                                <input type="number" id="missionTarget" placeholder="Maqsad soni">
+                            </div>
+                            <div class="form-group">
+                                <label>Mukofot tokenlari:</label>
+                                <input type="number" id="missionReward" placeholder="Mukofot miqdori">
+                            </div>
+                            <div class="form-group" id="channelUrlGroup" style="display: none;">
+                                <label>Kanal havolasi:</label>
+                                <input type="url" id="channelUrl" placeholder="https://t.me/...">
+                            </div>
+                            <button class="admin-btn" id="createMissionBtn">MISSIONANI YARATISH</button>
+                        </div>
+                        <div class="missions-list" id="adminMissionsList">
+                            <!-- Missions will be loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Settings Tab -->
+                <div class="admin-tab-content" id="settingsTab">
+                    <div class="admin-section">
+                        <h3>Global sozlamalar</h3>
+                        <div class="settings-form">
+                            <div class="form-group">
+                                <label>Game sozlamalari:</label>
+                                <div class="setting-item">
+                                    <label>Boshlang'ich tokenlar:</label>
+                                    <input type="number" id="initialTokens" value="0">
+                                </div>
+                                <div class="setting-item">
+                                    <label>Boshlang'ich cash:</label>
+                                    <input type="number" id="initialCash" value="0">
+                                </div>
+                                <div class="setting-item">
+                                    <label>Auto-save interval (sekund):</label>
+                                    <input type="number" id="autoSaveInterval" value="30">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Iqtisodiy sozlamalar:</label>
+                                <div class="setting-item">
+                                    <label>Token/Cash kursi:</label>
+                                    <input type="number" id="tokenCashRate" value="100" step="0.01">
+                                </div>
+                                <div class="setting-item">
+                                    <label>Reklama mukofoti (cash):</label>
+                                    <input type="number" id="adReward" value="5">
+                                </div>
+                            </div>
+                            <button class="admin-btn" id="saveGlobalSettingsBtn">SOZLAMALARNI SAQLASH</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -640,7 +885,7 @@
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="working-version-final.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
    

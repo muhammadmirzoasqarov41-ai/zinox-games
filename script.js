@@ -1,6 +1,6 @@
-// Zinox Games - Complete Game Logic
+// Zinox Games - Complete Game Logic (Fixed Version)
 // Author: Senior Full-Stack Developer
-// Version: 1.0 Production Ready
+// Version: 2.0 Production Ready
 
 class ZinoxGames {
     constructor() {
@@ -66,6 +66,13 @@ class ZinoxGames {
 
         // DOM Elements
         this.elements = {};
+        
+        // Admin state
+        this.isAdminLoggedIn = false;
+        this.adminCredentials = {
+            username: 'admin',
+            password: 'zinox2024'
+        };
         
         // Initialize
         this.init();
@@ -183,7 +190,7 @@ class ZinoxGames {
         this.elements.perSecond = document.getElementById('perSecond');
         this.elements.totalClicks = document.getElementById('totalClicks');
         this.elements.rank = document.getElementById('rank');
-        this.elements.energyBar = document.getElementById('energyBar');
+        this.elements.energyBar = document.getElementById('energyFill');
         this.elements.energyText = document.getElementById('energyText');
         
         // Upgrade buttons
@@ -191,17 +198,6 @@ class ZinoxGames {
         this.elements.buyAutoClicker = document.getElementById('buyAutoClicker');
         this.elements.buyMultiplier = document.getElementById('buyMultiplier');
         this.elements.buyComboMaster = document.getElementById('buyComboMaster');
-        
-        // Upgrade costs and levels
-        this.elements.tapPowerCost = document.getElementById('tapPowerCost');
-        this.elements.autoClickerCost = document.getElementById('autoClickerCost');
-        this.elements.multiplierCost = document.getElementById('multiplierCost');
-        this.elements.comboCost = document.getElementById('comboCost');
-        
-        this.elements.tapPowerLevel = document.getElementById('tapPowerLevel');
-        this.elements.autoClickerLevel = document.getElementById('autoClickerLevel');
-        this.elements.multiplierLevel = document.getElementById('multiplierLevel');
-        this.elements.comboLevel = document.getElementById('comboLevel');
         
         // User info
         this.elements.username = document.getElementById('username');
@@ -221,48 +217,10 @@ class ZinoxGames {
             profile: document.getElementById('profileModal'),
             missions: document.getElementById('missionsModal'),
             donate: document.getElementById('donateModal'),
-            chat: document.getElementById('chatModal')
+            chat: document.getElementById('chatModal'),
+            adminLogin: document.getElementById('adminLoginModal'),
+            adminPanel: document.getElementById('adminPanelModal')
         };
-        
-        // Modal buttons
-        this.elements.closeLeaderboard = document.getElementById('closeLeaderboard');
-        this.elements.closeReferral = document.getElementById('closeReferral');
-        this.elements.closeShop = document.getElementById('closeShop');
-        this.elements.closeAd = document.getElementById('closeAd');
-        this.elements.closeSettings = document.getElementById('closeSettings');
-        this.elements.closeDonate = document.getElementById('closeDonate');
-        this.elements.closeChat = document.getElementById('closeChat');
-        
-        // Chat elements
-        this.elements.chatMessages = document.getElementById('chatMessages');
-        this.elements.chatInput = document.getElementById('chatInput');
-        this.elements.chatSendBtn = document.getElementById('chatSendBtn');
-        
-        // Donate buttons
-        this.elements.donateFreeFire = document.getElementById('donateFreeFire');
-        this.elements.donatePUBG = document.getElementById('donatePUBG');
-        this.elements.donateML = document.getElementById('donateML');
-        
-        // Referral
-        this.elements.referralCode = document.getElementById('referralCode');
-        this.elements.copyReferral = document.getElementById('copyReferral');
-        this.elements.referralInput = document.getElementById('referralInput');
-        this.elements.applyReferral = document.getElementById('applyReferral');
-        this.elements.referralCount = document.getElementById('referralCount');
-        this.elements.referralEarnings = document.getElementById('referralEarnings');
-        
-        // Settings
-        this.elements.saveSettings = document.getElementById('saveSettings');
-        this.elements.soundToggle = document.getElementById('soundToggle');
-        this.elements.vibrationToggle = document.getElementById('vibrationToggle');
-        
-        // Shop
-        this.elements.buyCash = document.getElementById('buyCash');
-        this.elements.skipAdBtn = document.getElementById('skipAdBtn');
-        
-        // Leaderboard
-        this.elements.leaderboardList = document.getElementById('leaderboardList');
-        this.elements.onlineCount = document.getElementById('onlineCount');
         
         // Initialize Supabase
         this.initializeSupabase();
@@ -349,73 +307,27 @@ class ZinoxGames {
             console.warn('⚠️ Tap area/button topilmadi');
         }
         
-        // Upgrade buttons
-        if (this.elements.buyTapPower) {
-            this.elements.buyTapPower.addEventListener('click', () => this.buyUpgrade('tapPower'));
-        }
-        if (this.elements.buyAutoClicker) {
-            this.elements.buyAutoClicker.addEventListener('click', () => this.buyUpgrade('autoClicker'));
-        }
-        if (this.elements.buyMultiplier) {
-            this.elements.buyMultiplier.addEventListener('click', () => this.buyUpgrade('multiplier'));
-        }
-        if (this.elements.buyComboMaster) {
-            this.elements.buyComboMaster.addEventListener('click', () => this.buyUpgrade('comboMaster'));
-        }
-        console.log('✅ Upgrade tugmalari ulandi');
+        // Footer navigation
+        this.elements.navBtns.forEach(btn => {
+            btn.addEventListener('click', () => this.handleFooterNav(btn.dataset.tab));
+        });
         
-        // Modal buttons
-        if (this.elements.leaderboardBtn) {
-            this.elements.leaderboardBtn.addEventListener('click', () => this.openModal('leaderboard'));
-        }
-        if (this.elements.referralBtn) {
-            this.elements.referralBtn.addEventListener('click', () => this.openModal('referral'));
-        }
-        if (this.elements.shopBtn) {
-            this.elements.shopBtn.addEventListener('click', () => this.openModal('shop'));
-        }
-        if (this.elements.adBtn) {
-            this.elements.adBtn.addEventListener('click', () => this.openModal('ad'));
-        }
+        // Settings button
         if (this.elements.settingsBtn) {
             this.elements.settingsBtn.addEventListener('click', () => this.openModal('settings'));
         }
-        console.log('✅ Modal tugmalari ulandi');
         
-        // Close modal buttons
-        if (this.elements.closeLeaderboard) {
-            this.elements.closeLeaderboard.addEventListener('click', () => this.closeModal('leaderboard'));
-        }
-        if (this.elements.closeReferral) {
-            this.elements.closeReferral.addEventListener('click', () => this.closeModal('referral'));
-        }
-        if (this.elements.closeShop) {
-            this.elements.closeShop.addEventListener('click', () => this.closeModal('shop'));
-        }
-        if (this.elements.closeAd) {
-            this.elements.closeAd.addEventListener('click', () => this.closeModal('ad'));
-        }
-        if (this.elements.closeSettings) {
-            this.elements.closeSettings.addEventListener('click', () => this.closeModal('settings'));
+        // Admin access button
+        const adminAccessBtn = document.getElementById('adminAccessBtn');
+        if (adminAccessBtn) {
+            adminAccessBtn.addEventListener('click', () => this.openAdminLogin());
         }
         
-        // Referral code copy
-        if (this.elements.copyReferralBtn) {
-            this.elements.copyReferralBtn.addEventListener('click', () => this.copyReferralCode());
-        }
-        if (this.elements.applyReferralBtn) {
-            this.elements.applyReferralBtn.addEventListener('click', () => this.applyReferralCode());
-        }
+        // Auth listeners
+        this.setupAuthListeners();
         
-        // Ad skip
-        if (this.elements.skipAdBtn) {
-            this.elements.skipAdBtn.addEventListener('click', () => this.skipAd());
-        }
-        
-        // Settings
-        if (this.elements.saveSettings) {
-            this.elements.saveSettings.addEventListener('click', () => this.saveSettings());
-        }
+        // Admin listeners
+        this.setupAdminEventListeners();
         
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => this.handleKeyboard(e));
@@ -427,17 +339,10 @@ class ZinoxGames {
         window.addEventListener('beforeunload', () => this.saveGameState());
         
         console.log('✅ Barcha tadbirlar muvaffaqiyatli sozlandi');
-        
-        // Setup auth listeners
-        this.setupAuthListeners();
-        
-        // Setup profile listeners
-        this.setupProfileListeners();
     }
 
     setupAuthListeners() {
         // Auth modal elements
-        const authModal = document.getElementById('authModal');
         const signInBtn = document.getElementById('signInBtn');
         const signUpBtn = document.getElementById('signUpBtn');
         const authSwitchBtn = document.getElementById('authSwitchBtn');
@@ -460,22 +365,75 @@ class ZinoxGames {
         }
     }
 
-    setupProfileListeners() {
-        // Profile modal elements
-        const profileEditBtn = document.getElementById('profileEditBtn');
-        const saveProfileBtn = document.getElementById('saveProfileBtn');
-        const closeProfileBtn = document.getElementById('closeProfile');
-        
-        if (profileEditBtn) {
-            profileEditBtn.addEventListener('click', () => this.enableProfileEdit());
+    setupAdminEventListeners() {
+        // Admin login
+        const adminLoginBtn = document.getElementById('adminLoginBtn');
+        if (adminLoginBtn) {
+            adminLoginBtn.addEventListener('click', () => this.handleAdminLogin());
         }
         
-        if (saveProfileBtn) {
-            saveProfileBtn.addEventListener('click', () => this.saveProfileData());
+        // Close admin login
+        const closeAdminLogin = document.getElementById('closeAdminLogin');
+        if (closeAdminLogin) {
+            closeAdminLogin.addEventListener('click', () => this.closeModal('adminLogin'));
         }
         
-        if (closeProfileBtn) {
-            closeProfileBtn.addEventListener('click', () => this.closeModal('profile'));
+        // Close admin panel
+        const closeAdminPanel = document.getElementById('closeAdminPanel');
+        if (closeAdminPanel) {
+            closeAdminPanel.addEventListener('click', () => this.closeModal('adminPanel'));
+        }
+        
+        // Admin tabs
+        const adminTabs = document.querySelectorAll('.admin-tab');
+        adminTabs.forEach(tab => {
+            tab.addEventListener('click', () => this.switchAdminTab(tab.dataset.tab));
+        });
+        
+        // Mission type change
+        const missionType = document.getElementById('missionType');
+        if (missionType) {
+            missionType.addEventListener('change', () => this.handleMissionTypeChange());
+        }
+        
+        // Admin buttons
+        this.setupAdminButtons();
+    }
+
+    setupAdminButtons() {
+        // User management
+        const searchUserBtn = document.getElementById('searchUserBtn');
+        if (searchUserBtn) {
+            searchUserBtn.addEventListener('click', () => this.searchUser());
+        }
+        
+        const donateToUserBtn = document.getElementById('donateToUserBtn');
+        if (donateToUserBtn) {
+            donateToUserBtn.addEventListener('click', () => this.donateToUser());
+        }
+        
+        // Project donate
+        const projectDonateBtn = document.getElementById('projectDonateBtn');
+        if (projectDonateBtn) {
+            projectDonateBtn.addEventListener('click', () => this.projectDonate());
+        }
+        
+        // Ad upload
+        const uploadAdBtn = document.getElementById('uploadAdBtn');
+        if (uploadAdBtn) {
+            uploadAdBtn.addEventListener('click', () => this.uploadAd());
+        }
+        
+        // Mission creation
+        const createMissionBtn = document.getElementById('createMissionBtn');
+        if (createMissionBtn) {
+            createMissionBtn.addEventListener('click', () => this.createMission());
+        }
+        
+        // Global settings
+        const saveGlobalSettingsBtn = document.getElementById('saveGlobalSettingsBtn');
+        if (saveGlobalSettingsBtn) {
+            saveGlobalSettingsBtn.addEventListener('click', () => this.saveGlobalSettings());
         }
     }
 
@@ -801,93 +759,6 @@ class ZinoxGames {
         }
     }
 
-    buyUpgrade(type) {
-        const costs = {
-            tapPower: Math.floor(4 * Math.pow(2, this.gameState.tapPowerLevel)),
-            autoClicker: Math.floor(8 * Math.pow(2, this.gameState.autoClickerLevel)),
-            multiplier: Math.floor(16 * Math.pow(2, this.gameState.multiplierLevel - 1)),
-            comboMaster: Math.floor(32 * Math.pow(2, this.gameState.comboMasterLevel))
-        };
-        
-        const cost = costs[type];
-        
-        if (this.gameState.cashBalance < cost) {
-            this.showNotification('💰 Cash yetarli emas!', 'error');
-            return;
-        }
-        
-        // Deduct cash
-        this.gameState.cashBalance -= cost;
-        
-        // Apply upgrade
-        switch (type) {
-            case 'tapPower':
-                this.gameState.tapPowerLevel++;
-                this.gameState.tapPower++;
-                break;
-            case 'autoClicker':
-                this.gameState.autoClickerLevel++;
-                break;
-            case 'multiplier':
-                this.gameState.multiplierLevel++;
-                break;
-            case 'comboMaster':
-                this.gameState.comboMasterLevel++;
-                this.comboSystem.comboTime = Math.max(1000, this.comboSystem.comboTime - 200);
-                break;
-        }
-        
-        // Update UI
-        this.updateUI();
-        this.updateUpgradeDisplay();
-        
-        // Save game
-        this.saveGameState();
-        
-        // Show notification
-        this.showNotification(`✅ ${this.getUpgradeName(type)} yangilandi!`, 'success');
-        
-        // Play sound
-        this.playUpgradeSound();
-    }
-
-    getUpgradeName(type) {
-        const names = {
-            tapPower: 'Tap Power',
-            autoClicker: 'Auto Clicker',
-            multiplier: 'Multiplier',
-            comboMaster: 'Combo Master'
-        };
-        return names[type] || 'Upgrade';
-    }
-
-    playUpgradeSound() {
-        if (!this.config.soundEnabled) return;
-        
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.type = 'square';
-            oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(800, audioContext.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
-            
-        } catch (error) {
-            console.log('Sound not available');
-        }
-    }
-
     updateUI() {
         // Update currency displays
         if (this.elements.zinoxAmount) {
@@ -921,54 +792,8 @@ class ZinoxGames {
             this.elements.tapValue.textContent = this.calculateTapValue();
         }
         
-        // Update upgrade displays
-        this.updateUpgradeDisplay();
-        
         // Update energy display
         this.updateEnergyDisplay();
-    }
-
-    updateUpgradeDisplay() {
-        const costs = {
-            tapPower: Math.floor(4 * Math.pow(2, this.gameState.tapPowerLevel)),
-            autoClicker: Math.floor(8 * Math.pow(2, this.gameState.autoClickerLevel)),
-            multiplier: Math.floor(16 * Math.pow(2, this.gameState.multiplierLevel - 1)),
-            comboMaster: Math.floor(32 * Math.pow(2, this.gameState.comboMasterLevel))
-        };
-        
-        // Update costs
-        if (this.elements.tapPowerCost) {
-            this.elements.tapPowerCost.textContent = this.formatNumber(costs.tapPower);
-        }
-        
-        if (this.elements.autoClickerCost) {
-            this.elements.autoClickerCost.textContent = this.formatNumber(costs.autoClicker);
-        }
-        
-        if (this.elements.multiplierCost) {
-            this.elements.multiplierCost.textContent = this.formatNumber(costs.multiplier);
-        }
-        
-        if (this.elements.comboCost) {
-            this.elements.comboCost.textContent = this.formatNumber(costs.comboMaster);
-        }
-        
-        // Update levels
-        if (this.elements.tapPowerLevel) {
-            this.elements.tapPowerLevel.textContent = `Level ${this.gameState.tapPowerLevel}`;
-        }
-        
-        if (this.elements.autoClickerLevel) {
-            this.elements.autoClickerLevel.textContent = `Level ${this.gameState.autoClickerLevel}`;
-        }
-        
-        if (this.elements.multiplierLevel) {
-            this.elements.multiplierLevel.textContent = `Level ${this.gameState.multiplierLevel}`;
-        }
-        
-        if (this.elements.comboLevel) {
-            this.elements.comboLevel.textContent = `Level ${this.gameState.comboMasterLevel}`;
-        }
     }
 
     updateEnergyDisplay() {
@@ -999,14 +824,8 @@ class ZinoxGames {
             document.body.style.overflow = 'hidden';
             
             // Load modal-specific data
-            if (modalName === 'leaderboard') {
-                this.loadLeaderboard();
-            } else if (modalName === 'shop') {
-                this.loadShopData();
-            } else if (modalName === 'donate') {
-                this.updateDonateDisplay();
-            } else if (modalName === 'chat') {
-                this.initializeChat();
+            if (modalName === 'adminPanel') {
+                this.loadAdminData();
             }
         }
     }
@@ -1037,20 +856,11 @@ class ZinoxGames {
                     this.closeModal(modal);
                 });
                 break;
-            case 'leaderboard':
-                this.openModal('leaderboard');
-                break;
-            case 'profile':
-                if (this.gameState.isAuthenticated) {
-                    this.updateProfileDisplay();
-                    this.openModal('profile');
-                } else {
-                    this.openModal('auth');
-                }
+            case 'settings':
+                this.openModal('settings');
                 break;
             case 'missions':
                 if (this.gameState.isAuthenticated) {
-                    this.loadMissions();
                     this.openModal('missions');
                 } else {
                     this.openModal('auth');
@@ -1059,32 +869,19 @@ class ZinoxGames {
             case 'chat':
                 if (this.gameState.isAuthenticated) {
                     this.openModal('chat');
-                    this.initializeChat();
                 } else {
                     this.openModal('auth');
                 }
-                break;
-            case 'donate':
-                if (this.gameState.isAuthenticated) {
-                    this.updateDonateDisplay();
-                    this.openModal('donate');
-                } else {
-                    this.openModal('auth');
-                }
-                break;
-            case 'referral':
-                this.openModal('referral');
-                break;
-            case 'shop':
-                this.openModal('shop');
                 break;
         }
     }
 
     // Authentication functions
     async handleSignIn() {
-        const phone = document.getElementById('phoneNumber').value.trim();
-        const password = document.getElementById('password').value.trim();
+        const phone = document.getElementById('signInPhone').value.trim();
+        const password = document.getElementById('signInPassword').value.trim();
+        const nickname = document.getElementById('signInNickname').value.trim();
+        const telegram = document.getElementById('signInTelegram').value.trim();
         
         if (!phone || !password) {
             this.showNotification('❌ Iltimos, barcha maydonlarni to\'ldiring', 'error');
@@ -1100,68 +897,29 @@ class ZinoxGames {
             // Show loading
             this.showNotification('🔄 Kirish amalga oshirilmoqda...', 'info');
             
-            // Check if user exists in Supabase
-            if (this.supabase) {
-                const { data, error } = await this.supabase
-                    .from('players')
-                    .select('*')
-                    .eq('phone', phone)
-                    .single();
-                
-                if (error && error.code !== 'PGRST116') {
-                    throw error;
-                }
-                
-                if (!data) {
-                    this.showNotification('❌ Foydalanuvchi topilmadi. Ro\'yxatdan o\'ting.', 'error');
-                    return;
-                }
-                
-                // User found, update game state
-                this.gameState.isAuthenticated = true;
-                this.gameState.phone = data.phone;
-                this.gameState.username = data.username;
-                this.gameState.userId = data.user_id;
-                this.gameState.telegram = data.telegram;
-                this.gameState.cashBalance = data.cash_balance || 0;
-                this.gameState.zinoxTokens = data.zinox_tokens || 0;
-                this.gameState.totalClicks = data.total_clicks || 0;
-                this.gameState.referralCode = data.referral_code;
-                this.gameState.referralCount = data.referral_count || 0;
-                this.gameState.referralEarnings = data.referral_earnings || 0;
-                this.gameState.joinDate = data.join_date;
-                
-                // Update last online
-                await this.supabase
-                    .from('players')
-                    .update({ last_online: new Date().toISOString() })
-                    .eq('user_id', this.gameState.userId);
-                
-                console.log('✅ Muvaffaqiyatli kirish');
-            } else {
-                // Fallback to localStorage
-                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-                const user = users.find(u => u.phone === phone);
-                
-                if (!user) {
-                    this.showNotification('❌ Foydalanuvchi topilmadi. Ro\'yxatdan o\'ting.', 'error');
-                    return;
-                }
-                
-                if (user.password !== password) {
-                    this.showNotification('❌ Parol noto\'g\'ri', 'error');
-                    return;
-                }
-                
-                // Update game state
-                this.gameState.isAuthenticated = true;
-                this.gameState.phone = user.phone;
-                this.gameState.username = user.username;
-                this.gameState.userId = user.userId;
-                this.gameState.telegram = user.telegram;
-                
-                console.log('✅ Muvaffaqiyatli kirish (localStorage)');
+            // Load users from localStorage
+            const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+            const user = users.find(u => u.phone === phone);
+            
+            if (!user) {
+                this.showNotification('❌ Foydalanuvchi topilmadi. Ro\'yxatdan o\'ting.', 'error');
+                return;
             }
+            
+            if (user.password !== password) {
+                this.showNotification('❌ Parol noto\'g\'ri', 'error');
+                return;
+            }
+            
+            // Update game state
+            this.gameState.isAuthenticated = true;
+            this.gameState.phone = phone;
+            this.gameState.username = user.username;
+            this.gameState.userId = user.userId;
+            this.gameState.telegram = user.telegram;
+            this.gameState.cashBalance = user.cashBalance || 0;
+            this.gameState.zinoxTokens = user.zinoxTokens || 0;
+            this.gameState.totalClicks = user.totalClicks || 0;
             
             // Close auth modal
             this.closeModal('auth');
@@ -1182,11 +940,11 @@ class ZinoxGames {
     }
 
     async handleSignUp() {
-        const phone = document.getElementById('phoneNumber').value.trim();
-        const password = document.getElementById('password').value.trim();
-        const confirmPassword = document.getElementById('confirmPassword').value.trim();
-        const username = document.getElementById('signUpUsername').value.trim();
-        const telegram = document.getElementById('telegram').value.trim();
+        const phone = document.getElementById('signUpPhone').value.trim();
+        const password = document.getElementById('signUpPassword').value.trim();
+        const confirmPassword = document.getElementById('signUpPasswordConfirm').value.trim();
+        const username = document.getElementById('signUpNickname').value.trim();
+        const telegram = document.getElementById('signUpTelegram').value.trim();
         
         if (!phone || !password || !confirmPassword || !username) {
             this.showNotification('❌ Iltimos, barcha maydonlarni to\'ldiring', 'error');
@@ -1207,84 +965,37 @@ class ZinoxGames {
             // Show loading
             this.showNotification('🔄 Ro\'yxatdan o\'tilmoqda...', 'info');
             
-            // Check if user already exists
-            if (this.supabase) {
-                const { data, error } = await this.supabase
-                    .from('players')
-                    .select('user_id')
-                    .eq('phone', phone)
-                    .single();
-                
-                if (error && error.code !== 'PGRST116') {
-                    throw error;
-                }
-                
-                if (data) {
-                    this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
-                    return;
-                }
-                
-                // Create new user
-                const newUser = {
-                    user_id: this.gameState.userId,
-                    phone: phone,
-                    username: username,
-                    telegram: telegram,
-                    password: password, // In production, hash this
-                    referral_code: this.gameState.referralCode,
-                    zinox_tokens: 0,
-                    cash_balance: 0,
-                    total_clicks: 0,
-                    is_online: true,
-                    join_date: new Date().toISOString(),
-                    created_at: new Date().toISOString(),
-                    last_online: new Date().toISOString()
-                };
-                
-                const { data: createdUser, error: createError } = await this.supabase
-                    .from('players')
-                    .insert([newUser])
-                    .single();
-                
-                if (createError) throw createError;
-                
-                // Update game state
-                this.gameState.isAuthenticated = true;
-                this.gameState.phone = phone;
-                this.gameState.username = username;
-                this.gameState.telegram = telegram;
-                
-                console.log('✅ Muvaffaqiyatli ro\'yxatdan o\'tish');
-            } else {
-                // Fallback to localStorage
-                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-                
-                if (users.find(u => u.phone === phone)) {
-                    this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
-                    return;
-                }
-                
-                const newUser = {
-                    userId: this.gameState.userId,
-                    phone: phone,
-                    password: password,
-                    username: username,
-                    telegram: telegram,
-                    referralCode: this.gameState.referralCode,
-                    createdAt: new Date().toISOString()
-                };
-                
-                users.push(newUser);
-                localStorage.setItem('zinoxUsers', JSON.stringify(users));
-                
-                // Update game state
-                this.gameState.isAuthenticated = true;
-                this.gameState.phone = phone;
-                this.gameState.username = username;
-                this.gameState.telegram = telegram;
-                
-                console.log('✅ Muvaffaqiyatli ro\'yxatdan o\'tish (localStorage)');
+            // Load users from localStorage
+            const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+            
+            if (users.find(u => u.phone === phone)) {
+                this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
+                return;
             }
+            
+            // Create new user
+            const newUser = {
+                userId: this.generateUserId(),
+                phone: phone,
+                username: username,
+                telegram: telegram,
+                password: password,
+                referralCode: this.gameState.referralCode,
+                zinoxTokens: 0,
+                cashBalance: 0,
+                totalClicks: 0,
+                createdAt: new Date().toISOString()
+            };
+            
+            users.push(newUser);
+            localStorage.setItem('zinoxUsers', JSON.stringify(users));
+            
+            // Update game state
+            this.gameState.isAuthenticated = true;
+            this.gameState.phone = phone;
+            this.gameState.username = username;
+            this.gameState.telegram = telegram;
+            this.gameState.userId = newUser.userId;
             
             // Close auth modal
             this.closeModal('auth');
@@ -1305,11 +1016,11 @@ class ZinoxGames {
     }
 
     switchAuthMode() {
-        const authModal = document.getElementById('authModal');
         const signInForm = document.getElementById('signInForm');
         const signUpForm = document.getElementById('signUpForm');
         const authTitle = document.getElementById('authTitle');
         const authSwitchBtn = document.getElementById('authSwitchBtn');
+        const authSwitchText = document.getElementById('authSwitchText');
         
         if (signInForm.style.display === 'none') {
             // Switch to sign in
@@ -1317,12 +1028,14 @@ class ZinoxGames {
             signUpForm.style.display = 'none';
             authTitle.textContent = '🔐 KIRISH';
             authSwitchBtn.textContent = 'Ro\'yxatdan o\'tish';
+            authSwitchText.textContent = 'Hisobingiz yo\'qmi?';
         } else {
             // Switch to sign up
             signInForm.style.display = 'none';
             signUpForm.style.display = 'block';
             authTitle.textContent = '📝 RO\'YXATDAN O\'TISH';
             authSwitchBtn.textContent = 'Kirish';
+            authSwitchText.textContent = 'Hisobingiz bormi?';
         }
     }
 
@@ -1333,7 +1046,7 @@ class ZinoxGames {
     }
 
     generateUserId() {
-        return Math.floor(100000 + Math.random() * 900000).toString();
+        return Math.floor(10000 + Math.random() * 90000).toString();
     }
 
     generateReferralCode() {
@@ -1345,644 +1058,480 @@ class ZinoxGames {
         return code;
     }
 
-    // Profile functions
-    updateProfileDisplay() {
-        const profileUsername = document.getElementById('profileUsername');
-        const profilePhone = document.getElementById('profilePhone');
-        const profileTelegram = document.getElementById('profileTelegram');
-        const profileReferralCode = document.getElementById('profileReferralCode');
-        const profileJoinDate = document.getElementById('profileJoinDate');
-        const profileTotalClicks = document.getElementById('profileTotalClicks');
-        const profileReferralCount = document.getElementById('profileReferralCount');
+    // Settings functions
+    saveSettings() {
+        // Get settings values
+        const username = document.getElementById('usernameInput')?.value || this.gameState.username;
+        const soundEnabled = document.getElementById('soundToggle')?.checked || false;
+        const vibrationEnabled = document.getElementById('vibrationToggle')?.checked || false;
+        const language = document.getElementById('languageSelect')?.value || 'uz';
+        const theme = document.getElementById('themeSelect')?.value || 'dark';
+        const pushNotifications = document.getElementById('pushNotifications')?.checked || false;
+        const autoSave = document.getElementById('autoSave')?.checked || true;
         
-        if (profileUsername) profileUsername.textContent = this.gameState.username;
-        if (profilePhone) profilePhone.textContent = this.gameState.phone;
-        if (profileTelegram) profileTelegram.textContent = this.gameState.telegram || 'Kiritilmagan';
-        if (profileReferralCode) profileReferralCode.textContent = this.gameState.referralCode;
-        if (profileJoinDate) profileJoinDate.textContent = new Date(this.gameState.joinDate).toLocaleDateString('uz-UZ');
-        if (profileTotalClicks) profileTotalClicks.textContent = this.formatNumber(this.gameState.totalClicks);
-        if (profileReferralCount) profileReferralCount.textContent = this.gameState.referralCount;
-    }
-
-    enableProfileEdit() {
-        const profileUsername = document.getElementById('profileUsername');
-        const profileTelegram = document.getElementById('profileTelegram');
-        const saveProfileBtn = document.getElementById('saveProfileBtn');
+        // Update game state
+        this.gameState.username = username;
+        this.config.soundEnabled = soundEnabled;
+        this.config.vibrationEnabled = vibrationEnabled;
+        this.config.language = language;
+        this.config.theme = theme;
+        this.config.pushNotifications = pushNotifications;
+        this.config.autoSave = autoSave;
         
-        if (profileUsername) {
-            profileUsername.contentEditable = true;
-            profileUsername.style.border = '2px solid var(--primary)';
-        }
+        // Apply theme
+        this.applyTheme(theme);
         
-        if (profileTelegram) {
-            profileTelegram.contentEditable = true;
-            profileTelegram.style.border = '2px solid var(--primary)';
-        }
-        
-        if (saveProfileBtn) {
-            saveProfileBtn.style.display = 'block';
-        }
-    }
-
-    async saveProfileData() {
-        const profileUsername = document.getElementById('profileUsername');
-        const profileTelegram = document.getElementById('profileTelegram');
-        
-        const newUsername = profileUsername.textContent.trim();
-        const newTelegram = profileTelegram.textContent.trim();
-        
-        if (!newUsername) {
-            this.showNotification('❌ Username bo\'sh bo\'lishi mumkin emas', 'error');
-            return;
-        }
-        
-        try {
-            if (this.supabase) {
-                const { error } = await this.supabase
-                    .from('players')
-                    .update({
-                        username: newUsername,
-                        telegram: newTelegram
-                    })
-                    .eq('user_id', this.gameState.userId);
-                
-                if (error) throw error;
-            }
-            
-            // Update local state
-            this.gameState.username = newUsername;
-            this.gameState.telegram = newTelegram;
-            
-            // Update UI
-            this.updateUI();
-            
-            // Disable editing
-            profileUsername.contentEditable = false;
-            profileUsername.style.border = 'none';
-            profileTelegram.contentEditable = false;
-            profileTelegram.style.border = 'none';
-            
-            // Hide save button
-            document.getElementById('saveProfileBtn').style.display = 'none';
-            
-            this.showNotification('✅ Profil ma\'lumotlari yangilandi', 'success');
-            
-        } catch (error) {
-            console.error('❌ Profil yangilash xatosi:', error);
-            this.showNotification('❌ Profil yangilashda xatolik', 'error');
-        }
-    }
-
-    // Mission functions
-    loadMissions() {
-        const missionsList = document.getElementById('missionsList');
-        if (!missionsList) return;
-        
-        const missions = [
-            {
-                id: 1,
-                title: 'Birinchi qadamlar',
-                description: '1000 token yig\'ing',
-                reward: 50,
-                progress: Math.min(this.gameState.zinoxTokens, 1000),
-                target: 1000,
-                completed: this.gameState.zinoxTokens >= 1000
-            },
-            {
-                id: 2,
-                title: 'Active o\'yinchi',
-                description: '100 marta bosing',
-                reward: 100,
-                progress: Math.min(this.gameState.totalClicks, 100),
-                target: 100,
-                completed: this.gameState.totalClicks >= 100
-            },
-            {
-                id: 3,
-                title: 'Master Clicker',
-                description: '10000 token yig\'ing',
-                reward: 500,
-                progress: Math.min(this.gameState.zinoxTokens, 10000),
-                target: 10000,
-                completed: this.gameState.zinoxTokens >= 10000
-            },
-            {
-                id: 4,
-                title: 'Referal Master',
-                description: '5 do\'stni taklif qiling',
-                reward: 1000,
-                progress: Math.min(this.gameState.referralCount, 5),
-                target: 5,
-                completed: this.gameState.referralCount >= 5
-            }
-        ];
-        
-        missionsList.innerHTML = missions.map(mission => `
-            <div class="mission-item ${mission.completed ? 'completed' : ''}">
-                <div class="mission-header">
-                    <h3>${mission.title}</h3>
-                    <span class="mission-reward">+${mission.reward} 💎</span>
-                </div>
-                <p>${mission.description}</p>
-                <div class="mission-progress">
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: ${(mission.progress / mission.target) * 100}%"></div>
-                    </div>
-                    <span class="progress-text">${mission.progress}/${mission.target}</span>
-                </div>
-                ${mission.completed ? '<div class="mission-completed">✅ Tugallandi</div>' : ''}
-            </div>
-        `).join('');
-    }
-
-    // Donation functions
-    updateDonateDisplay() {
-        const donateStats = document.getElementById('donateStats');
-        if (!donateStats) return;
-        
-        const totalDonated = this.gameState.totalDonated;
-        const donateCount = this.gameState.donateCount;
-        
-        donateStats.innerHTML = `
-            <div class="stat-item">
-                <span class="stat-label">Jami yig'ilgan:</span>
-                <span class="stat-value">${totalDonated.toLocaleString()} so'm</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-label">Donatlar soni:</span>
-                <span class="stat-value">${donateCount}</span>
-            </div>
-        `;
-        
-        // Update progress bars for each game
-        Object.keys(this.gameState.donateProgress).forEach(gameType => {
-            const progress = this.gameState.donateProgress[gameType];
-            const progressBar = document.getElementById(`${gameType}Progress`);
-            const progressText = document.getElementById(`${gameType}ProgressText`);
-            const donateButton = document.getElementById(`donate${gameType.charAt(0).toUpperCase() + gameType.slice(1)}`);
-            
-            if (progressBar) {
-                const percentage = (progress.current / progress.target) * 100;
-                progressBar.style.width = `${percentage}%`;
-            }
-            
-            if (progressText) {
-                progressText.textContent = `${progress.current.toLocaleString()} / ${progress.target.toLocaleString()} so'm`;
-            }
-            
-            if (donateButton) {
-                donateButton.disabled = progress.completed;
-                donateButton.textContent = progress.completed ? '✅ Tugallandi' : `Yuborish (${progress.target - progress.current} so'm qoldi)`;
-            }
-        });
-    }
-
-    async handleDonate(gameType) {
-        const progress = this.gameState.donateProgress[gameType];
-        const remaining = progress.target - progress.current;
-        
-        if (remaining <= 0) {
-            this.showNotification('❌ Bu donat allaqachon tugallangan!', 'error');
-            return;
-        }
-        
-        const cashNeeded = Math.ceil(remaining / 2000); // 1 cash = 2000 so'm
-        
-        if (this.gameState.cashBalance < cashNeeded) {
-            this.showNotification(`❌ Yetarli cash yo'q! ${cashNeeded} cash kerak.`, 'error');
-            return;
-        }
-        
-        // Confirmation dialog
-        const confirmed = confirm(`${this.getGameName(gameType)} uchun ${remaining.toLocaleString()} so'm donat qilishni tasdiqlaysizmi?\n\nKerakli cash: ${cashNeeded}`);
-        
-        if (!confirmed) return;
-        
-        try {
-            // Process donation
-            await this.processDonation(gameType, remaining, cashNeeded);
-            
-        } catch (error) {
-            console.error('❌ Donat xatosi:', error);
-            this.showNotification('❌ Donat qilishda xatolik yuz berdi', 'error');
-        }
-    }
-
-    async processDonation(gameType, amount, cashCost) {
-        // Deduct cash
-        this.gameState.cashBalance -= cashCost;
-        
-        // Update progress
-        this.gameState.donateProgress[gameType].current += amount;
-        this.gameState.totalDonated += amount;
-        this.gameState.donateCount++;
-        
-        // Check if completed
-        const progress = this.gameState.donateProgress[gameType];
-        if (progress.current >= progress.target) {
-            progress.completed = true;
-            progress.current = progress.target;
-            
-            // Give bonus
-            const bonusTokens = 1000;
-            this.gameState.zinoxTokens += bonusTokens;
-            this.showNotification(`🎉 Donat yakunlandi! ${bonusTokens} token bonus!`, 'success');
-            
-            // Process actual game donation via Groq API
-            await this.processGameDonation(gameType);
-        } else {
-            this.showNotification(`✅ Donat yangilandi! ${progress.current}/${progress.target} so'm`, 'success');
-        }
+        // Save settings
+        localStorage.setItem('zinoxSettings', JSON.stringify({
+            soundEnabled, vibrationEnabled, language, theme, pushNotifications, autoSave
+        }));
         
         // Update UI
         this.updateUI();
-        this.updateDonateDisplay();
         
-        // Save game
-        this.saveGameState();
-    }
-
-    async processGameDonation(gameType) {
-        try {
-            // Use Groq API to process actual game donation
-            const response = await this.callGroqAPI({
-                action: 'process_donation',
-                game_type: gameType,
-                user_id: this.gameState.userId,
-                amount: this.gameState.donateProgress[gameType].target
-            });
-            
-            console.log('🎮 Game donation processed:', response);
-            
-        } catch (error) {
-            console.error('❌ Game donation processing error:', error);
-        }
-    }
-
-    getGameName(gameType) {
-        const names = {
-            freeFire: 'Free Fire',
-            pubg: 'PUBG Mobile',
-            mobileLegends: 'Mobile Legends'
-        };
-        return names[gameType] || gameType;
-    }
-
-    // Chat Functions
-    initializeChat() {
-        console.log('🚀 Chat tizimi ishga tushirilmoqda...');
+        // Close modal
+        this.closeModal('settings');
         
-        // Setup chat listeners first
-        if (this.elements.chatInput) {
-            this.elements.chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.sendChatMessage();
-                }
-            });
-            
-            // Add keydown listener for space and other keys
-            this.elements.chatInput.addEventListener('keydown', (e) => {
-                // Allow space and all other keys
-                if (e.key === ' ') {
-                    // Just allow space, don't prevent default
-                    console.log('Space key pressed');
-                }
-            });
-            
-            // Add input event to track changes
-            this.elements.chatInput.addEventListener('input', (e) => {
-                console.log('Input changed:', e.target.value);
-            });
-            
-            console.log('✅ Chat input listener ulandi');
+        this.showNotification('✅ Sozlamalar saqlandi!', 'success');
+    }
+
+    applyTheme(theme) {
+        // Remove existing theme classes
+        document.body.classList.remove('theme-dark', 'theme-light', 'theme-auto');
+        
+        // Apply new theme
+        if (theme === 'auto') {
+            const hour = new Date().getHours();
+            const isDark = hour >= 18 || hour < 6;
+            document.body.classList.add(isDark ? 'theme-dark' : 'theme-light');
         } else {
-            console.warn('⚠️ Chat input elementi topilmadi');
-        }
-        
-        if (this.elements.chatSendBtn) {
-            this.elements.chatSendBtn.addEventListener('click', () => this.sendChatMessage());
-            console.log('✅ Chat send button listener ulandi');
-        } else {
-            console.warn('⚠️ Chat send button elementi topilmadi');
-        }
-        
-        if (this.elements.closeChat) {
-            this.elements.closeChat.addEventListener('click', () => this.closeModal('chat'));
-            console.log('✅ Chat close button listener ulandi');
-        }
-        
-        // Try Supabase if available, otherwise use local storage
-        if (this.supabase) {
-            console.log('📡 Supabase bilan chat ishga tushirilmoqda...');
-            this.loadChatMessages();
-            this.setupChatSubscription();
-        } else {
-            console.warn('⚠️ Supabase yo\'q, local storage ishlatilmoqda...');
-            this.loadLocalChatMessages();
-        }
-        
-        console.log('✅ Chat tizimiga ulandi');
-    }
-
-    async loadChatMessages() {
-        try {
-            const { data, error } = await this.supabase
-                .from('chat_messages')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(50);
-            
-            if (error) throw error;
-            
-            // Reverse to show oldest first
-            const messages = data.reverse();
-            this.displayChatMessages(messages);
-            console.log('✅ Supabase chat xabarlar yuklandi');
-            
-        } catch (error) {
-            console.error('❌ Supabase chat xabarlarini yuklashda xatolik:', error);
-            // Fallback to local storage
-            this.loadLocalChatMessages();
+            document.body.classList.add(`theme-${theme}`);
         }
     }
 
-    loadLocalChatMessages() {
-        try {
-            const messages = JSON.parse(localStorage.getItem('zinox_chat_messages') || '[]');
-            this.displayChatMessages(messages);
-            console.log('✅ Local storage chat xabarlar yuklandi');
-        } catch (error) {
-            console.error('❌ Local storage chat xabarlarini yuklashda xatolik:', error);
-            // Show welcome message
-            this.displayChatMessages([{
-                user_id: 'system',
-                username: 'System',
-                message: '💬 Chatga xush kelibsiz! Xabar yuborish uchun ro\'yxatdan o\'ting.',
-                created_at: new Date().toISOString()
-            }]);
-        }
+    // Admin Panel Functions
+    openAdminLogin() {
+        this.openModal('adminLogin');
     }
 
-    displayChatMessages(messages) {
-        if (!this.elements.chatMessages) return;
+    handleAdminLogin() {
+        const username = document.getElementById('adminUsername').value.trim();
+        const password = document.getElementById('adminPassword').value.trim();
         
-        this.elements.chatMessages.innerHTML = '';
-        
-        messages.forEach(message => {
-            this.addChatMessage(message);
-        });
-        
-        // Scroll to bottom
-        this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
-    }
-
-    addChatMessage(message) {
-        if (!this.elements.chatMessages) return;
-        
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-message ${message.user_id === this.gameState.userId ? 'own' : ''}`;
-        
-        const time = new Date(message.created_at).toLocaleTimeString('uz-UZ', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        
-        messageDiv.innerHTML = `
-            <div class="chat-message-header">
-                <span class="chat-message-username">${message.username}</span>
-                <span class="chat-message-time">${time}</span>
-            </div>
-            <div class="chat-message-text">${this.escapeHtml(message.message)}</div>
-        `;
-        
-        this.elements.chatMessages.appendChild(messageDiv);
-        
-        // Scroll to bottom if it's own message
-        if (message.user_id === this.gameState.userId) {
-            this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
-        }
-    }
-
-    async sendChatMessage() {
-        if (!this.elements.chatInput || !this.elements.chatSendBtn) return;
-        
-        const messageText = this.elements.chatInput.value;
-        
-        // Allow messages with spaces (but not empty)
-        if (messageText.length === 0) return;
-        
-        // Check if user is authenticated
-        if (!this.gameState.isAuthenticated) {
-            this.showNotification('❌ Xabar yuborish uchun ro\'yxatdan o\'ting!', 'warning');
+        if (!username || !password) {
+            this.showNotification('❌ Login va parolni kiriting!', 'error');
             return;
         }
         
-        // Disable send button
-        this.elements.chatSendBtn.disabled = true;
-        
-        const messageData = {
-            user_id: this.gameState.userId,
-            username: this.gameState.username,
-            message: messageText.trim(), // Trim for storage but allow spaces in input
-            created_at: new Date().toISOString()
-        };
-        
-        try {
-            if (this.supabase) {
-                // Try Supabase first
-                const { data, error } = await this.supabase
-                    .from('chat_messages')
-                    .insert([messageData])
-                    .select();
-                
-                if (error) throw error;
-                
-                console.log('✅ Xabar Supabase ga yuborildi');
-            } else {
-                // Fallback to local storage
-                this.saveLocalChatMessage(messageData);
-                console.log('✅ Xabar local storage ga saqlandi');
-            }
-            
-            // Add message to display immediately
-            this.addChatMessage(messageData);
-            
-            // Clear input
-            this.elements.chatInput.value = '';
-            
-            // Show success notification
-            this.showNotification('✅ Xabar yuborildi!', 'success');
-            
-        } catch (error) {
-            console.error('❌ Xabar yuborishda xatolik:', error);
-            
-            // Fallback to local storage
-            try {
-                this.saveLocalChatMessage(messageData);
-                this.addChatMessage(messageData);
-                this.elements.chatInput.value = '';
-                this.showNotification('✅ Xabar mahalliy saqlandi!', 'success');
-            } catch (fallbackError) {
-                console.error('❌ Local storage fallback ham ishlamadi:', fallbackError);
-                this.showNotification('❌ Xabar yuborib bo\'lmadi', 'error');
-            }
-        } finally {
-            // Enable send button
-            this.elements.chatSendBtn.disabled = false;
+        if (username === this.adminCredentials.username && password === this.adminCredentials.password) {
+            this.isAdminLoggedIn = true;
+            this.closeModal('adminLogin');
+            this.openModal('adminPanel');
+            this.showNotification('👑 Admin panelga muvaffaqiyatli kirildi!', 'success');
+        } else {
+            this.showNotification('❌ Login yoki parol noto\'g\'ri!', 'error');
         }
     }
 
-    saveLocalChatMessage(message) {
-        const messages = JSON.parse(localStorage.getItem('zinox_chat_messages') || '[]');
-        messages.push(message);
+    switchAdminTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.classList.remove('active');
+            if (tab.dataset.tab === tabName) {
+                tab.classList.add('active');
+            }
+        });
         
-        // Keep only last 100 messages
-        if (messages.length > 100) {
-            messages.splice(0, messages.length - 100);
+        // Update tab content
+        document.querySelectorAll('.admin-tab-content').forEach(content => {
+            content.style.display = 'none';
+            content.classList.remove('active');
+        });
+        
+        const activeTab = document.getElementById(tabName + 'Tab');
+        if (activeTab) {
+            activeTab.style.display = 'block';
+            activeTab.classList.add('active');
         }
         
-        localStorage.setItem('zinox_chat_messages', JSON.stringify(messages));
+        // Load tab-specific data
+        this.loadAdminTabData(tabName);
     }
 
-    setupChatSubscription() {
-        if (!this.supabase) {
-            console.log('⚠️ Supabase yo\'q, realtime subscription o\'rnatilmaydi');
+    loadAdminTabData(tabName) {
+        switch(tabName) {
+            case 'users':
+                this.loadUsersList();
+                break;
+            case 'donate':
+                this.loadDonateStats();
+                break;
+            case 'ads':
+                this.loadAdsList();
+                break;
+            case 'missions':
+                this.loadMissionsList();
+                break;
+            case 'settings':
+                this.loadGlobalSettings();
+                break;
+        }
+    }
+
+    loadAdminData() {
+        this.loadUsersList();
+        this.loadDonateStats();
+        this.loadAdsList();
+        this.loadMissionsList();
+        this.loadGlobalSettings();
+    }
+
+    loadUsersList() {
+        const usersList = document.getElementById('adminUsersList');
+        if (!usersList) return;
+        
+        // Load users from localStorage
+        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+        
+        // Display users
+        usersList.innerHTML = '';
+        users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.className = 'admin-user-item';
+            userItem.innerHTML = `
+                <div class="user-info">
+                    <span class="user-id">ID: ${user.userId}</span>
+                    <span class="user-name">${user.username}</span>
+                    <span class="user-phone">${user.phone}</span>
+                </div>
+                <div class="user-stats">
+                    <span class="user-tokens">💎 ${user.zinoxTokens || 0}</span>
+                    <span class="user-cash">$ ${user.cashBalance || 0}</span>
+                </div>
+            `;
+            usersList.appendChild(userItem);
+        });
+        
+        if (users.length === 0) {
+            usersList.innerHTML = '<p class="no-data">Foydalanuvchilar topilmadi</p>';
+        }
+    }
+
+    searchUser() {
+        const searchInput = document.getElementById('userSearchInput').value.trim();
+        if (!searchInput) {
+            this.showNotification('❌ Qidiruv so\'zini kiriting!', 'error');
             return;
         }
         
-        try {
-            const subscription = this.supabase
-                .channel('chat_messages')
-                .on('postgres_changes', 
-                    { event: 'INSERT', schema: 'public', table: 'chat_messages' },
-                    (payload) => {
-                        console.log('📨 Yangi xabar keldi:', payload.new);
-                        const newMessage = payload.new;
-                        if (newMessage.user_id !== this.gameState.userId) {
-                            this.addChatMessage(newMessage);
-                        }
-                    }
-                )
-                .subscribe((status) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log('✅ Chat realtime subscription o\'rnatildi');
-                    } else if (status === 'CHANNEL_ERROR') {
-                        console.error('❌ Chat subscription xatosi');
-                    }
-                });
-                
-        } catch (error) {
-            console.error('❌ Chat subscription o\'rnatishda xatolik:', error);
-        }
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Groq API Functions
-    async callGroqAPI(data) {
-        try {
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.config.groqApiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama3-70b-8192',
-                    messages: [
-                        {
-                            role: 'system',
-                            content: 'You are a game donation processing assistant. Process the donation request and return a confirmation.'
-                        },
-                        {
-                            role: 'user',
-                            content: JSON.stringify(data)
-                        }
-                    ],
-                    max_tokens: 100,
-                    temperature: 0.3
-                })
-            });
-            
-            const result = await response.json();
-            return result.choices[0].message.content;
-            
-        } catch (error) {
-            console.error('❌ Groq API xatosi:', error);
-            throw error;
-        }
-    }
-
-    // AI Protection System (placeholder for Groq API integration)
-    async checkSuspiciousActivity(activity) {
-        try {
-            const response = await this.callGroqAPI({
-                action: 'check_suspicious_activity',
-                activity: activity,
-                user_id: this.gameState.userId,
-                phone: this.gameState.phone,
-                total_clicks: this.gameState.totalClicks,
-                cash_balance: this.gameState.cashBalance
-            });
-            
-            // Parse response to determine if suspicious
-            return response.toLowerCase().includes('suspicious');
-            
-        } catch (error) {
-            console.error('❌ AI tekshiruvi xatosi:', error);
-            return false; // Default to not suspicious on error
-        }
-    }
-
-    // Utility functions
-    showNotification(message, type = 'info') {
-        const notification = document.createElement('div');
-        notification.className = `notification ${type}`;
-        notification.textContent = message;
+        // Search users
+        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
         
-        document.body.appendChild(notification);
+        const foundUser = users.find(user => 
+            user.userId === searchInput || 
+            user.username.toLowerCase().includes(searchInput.toLowerCase())
+        );
         
-        setTimeout(() => {
-            notification.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            notification.classList.remove('show');
-            setTimeout(() => {
-                notification.remove();
-            }, 300);
-        }, 3000);
+        if (foundUser) {
+            document.getElementById('selectedUserId').value = foundUser.userId;
+            this.showNotification(`✅ Foydalanuvchi topildi: ${foundUser.username}`, 'success');
+        } else {
+            this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+        }
     }
 
-    async saveGameState() {
-        try {
-            // Save to localStorage
-            localStorage.setItem('zinoxGameState', JSON.stringify(this.gameState));
-            
-            // Save to Supabase if authenticated
-            if (this.gameState.isAuthenticated && this.supabase) {
-                await this.supabase
-                    .from('players')
-                    .upsert({
-                        user_id: this.gameState.userId,
-                        zinox_tokens: this.gameState.zinoxTokens,
-                        cash_balance: this.gameState.cashBalance,
-                        total_clicks: this.gameState.totalClicks,
-                        last_online: new Date().toISOString(),
-                        donate_progress: this.gameState.donateProgress,
-                        total_donated: this.gameState.totalDonated,
-                        donate_count: this.gameState.donateCount
-                    });
-            }
-            
-        } catch (error) {
-            console.error('❌ O\'yin holatini saqlashda xatolik:', error);
+    donateToUser() {
+        const userId = document.getElementById('selectedUserId').value.trim();
+        const amount = parseFloat(document.getElementById('donateAmount').value);
+        
+        if (!userId || !amount || amount <= 0) {
+            this.showNotification('❌ User ID va miqdorni to\'g\'ri kiriting!', 'error');
+            return;
         }
+        
+        // Find user
+        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+        
+        const userIndex = users.findIndex(user => user.userId === userId);
+        if (userIndex === -1) {
+            this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+            return;
+        }
+        
+        // Update user balance
+        users[userIndex].cashBalance = (users[userIndex].cashBalance || 0) + amount;
+        
+        // Save users
+        localStorage.setItem('zinoxUsers', JSON.stringify(users));
+        
+        // Log donation
+        this.logDonation(userId, amount, 'admin_donate');
+        
+        // Clear form
+        document.getElementById('selectedUserId').value = '';
+        document.getElementById('donateAmount').value = '';
+        
+        // Refresh users list
+        this.loadUsersList();
+        
+        this.showNotification(`✅ ${amount} cash userga yuborildi!`, 'success');
+    }
+
+    projectDonate() {
+        const amount = parseFloat(document.getElementById('projectDonateAmount').value);
+        const method = document.getElementById('paymentMethod').value;
+        const note = document.getElementById('donateNote').value.trim();
+        
+        if (!amount || amount <= 0) {
+            this.showNotification('❌ Miqdorni to\'g\'ri kiriting!', 'error');
+            return;
+        }
+        
+        // Log project donation
+        this.logProjectDonation(amount, method, note);
+        
+        // Clear form
+        document.getElementById('projectDonateAmount').value = '';
+        document.getElementById('donateNote').value = '';
+        
+        // Update stats
+        this.loadDonateStats();
+        
+        this.showNotification(`✅ Projectga ${amount} cash donat qilindi!`, 'success');
+    }
+
+    uploadAd() {
+        const file = document.getElementById('adFile').files[0];
+        const type = document.getElementById('adType').value;
+        const title = document.getElementById('adTitle').value.trim();
+        const link = document.getElementById('adLink').value.trim();
+        const duration = parseInt(document.getElementById('adDuration').value);
+        
+        if (!file || !title) {
+            this.showNotification('❌ Fayl va nomni kiriting!', 'error');
+            return;
+        }
+        
+        // Read file and store
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const ad = {
+                id: Date.now().toString(),
+                type: type,
+                title: title,
+                link: link,
+                duration: duration,
+                data: e.target.result,
+                createdAt: new Date().toISOString()
+            };
+            
+            // Save ad
+            const ads = JSON.parse(localStorage.getItem('zinoxAds') || '[]');
+            ads.push(ad);
+            localStorage.setItem('zinoxAds', JSON.stringify(ads));
+            
+            // Clear form
+            document.getElementById('adFile').value = '';
+            document.getElementById('adTitle').value = '';
+            document.getElementById('adLink').value = '';
+            document.getElementById('adDuration').value = '15';
+            
+            // Refresh ads list
+            this.loadAdsList();
+            
+            this.showNotification('✅ Reklama yuklandi!', 'success');
+        };
+        
+        reader.readAsDataURL(file);
+    }
+
+    createMission() {
+        const type = document.getElementById('missionType').value;
+        const title = document.getElementById('missionTitle').value.trim();
+        const description = document.getElementById('missionDescription').value.trim();
+        const target = parseInt(document.getElementById('missionTarget').value);
+        const reward = parseInt(document.getElementById('missionReward').value);
+        const channelUrl = document.getElementById('channelUrl')?.value.trim() || '';
+        
+        if (!title || !description || !target || !reward) {
+            this.showNotification('❌ Barcha maydonlarni to\'ldiring!', 'error');
+            return;
+        }
+        
+        const mission = {
+            id: Date.now().toString(),
+            type: type,
+            title: title,
+            description: description,
+            target: target,
+            reward: reward,
+            channelUrl: channelUrl,
+            isActive: true,
+            createdAt: new Date().toISOString()
+        };
+        
+        // Save mission
+        const missions = JSON.parse(localStorage.getItem('zinoxMissions') || '[]');
+        missions.push(mission);
+        localStorage.setItem('zinoxMissions', JSON.stringify(missions));
+        
+        // Clear form
+        document.getElementById('missionTitle').value = '';
+        document.getElementById('missionDescription').value = '';
+        document.getElementById('missionTarget').value = '';
+        document.getElementById('missionReward').value = '';
+        document.getElementById('channelUrl').value = '';
+        
+        // Refresh missions list
+        this.loadMissionsList();
+        
+        this.showNotification('✅ Missiya yaratildi!', 'success');
+    }
+
+    handleMissionTypeChange() {
+        const type = document.getElementById('missionType').value;
+        const channelUrlGroup = document.getElementById('channelUrlGroup');
+        
+        if (type === 'channel') {
+            channelUrlGroup.style.display = 'block';
+        } else {
+            channelUrlGroup.style.display = 'none';
+        }
+    }
+
+    saveGlobalSettings() {
+        const settings = {
+            initialTokens: parseInt(document.getElementById('initialTokens').value),
+            initialCash: parseInt(document.getElementById('initialCash').value),
+            autoSaveInterval: parseInt(document.getElementById('autoSaveInterval').value),
+            tokenCashRate: parseFloat(document.getElementById('tokenCashRate').value),
+            adReward: parseInt(document.getElementById('adReward').value)
+        };
+        
+        // Save settings
+        localStorage.setItem('zinoxGlobalSettings', JSON.stringify(settings));
+        
+        // Apply settings
+        this.config.autoSaveInterval = settings.autoSaveInterval * 1000;
+        
+        this.showNotification('✅ Global sozlamalar saqlandi!', 'success');
+    }
+
+    loadDonateStats() {
+        const totalDonates = document.getElementById('totalDonates');
+        const lastDonate = document.getElementById('lastDonate');
+        
+        // Get donation stats
+        const donations = JSON.parse(localStorage.getItem('zinoxProjectDonations') || '[]');
+        const total = donations.reduce((sum, d) => sum + d.amount, 0);
+        const last = donations.length > 0 ? donations[donations.length - 1] : null;
+        
+        if (totalDonates) totalDonates.textContent = `${total} $`;
+        if (lastDonate) lastDonate.textContent = last ? new Date(last.createdAt).toLocaleString() : 'Yo\'q';
+    }
+
+    loadAdsList() {
+        const adsList = document.getElementById('adminAdsList');
+        if (!adsList) return;
+        
+        const ads = JSON.parse(localStorage.getItem('zinoxAds') || '[]');
+        
+        adsList.innerHTML = '';
+        ads.forEach(ad => {
+            const adItem = document.createElement('div');
+            adItem.className = 'admin-ad-item';
+            adItem.innerHTML = `
+                <div class="ad-info">
+                    <span class="ad-title">${ad.title}</span>
+                    <span class="ad-type">${ad.type}</span>
+                    <span class="ad-duration">${ad.duration}s</span>
+                </div>
+                <div class="ad-actions">
+                    <button class="admin-btn-small" onclick="zinoxGame.deleteAd('${ad.id}')">🗑️</button>
+                </div>
+            `;
+            adsList.appendChild(adItem);
+        });
+        
+        if (ads.length === 0) {
+            adsList.innerHTML = '<p class="no-data">Reklamalar topilmadi</p>';
+        }
+    }
+
+    loadMissionsList() {
+        const missionsList = document.getElementById('adminMissionsList');
+        if (!missionsList) return;
+        
+        const missions = JSON.parse(localStorage.getItem('zinoxMissions') || '[]');
+        
+        missionsList.innerHTML = '';
+        missions.forEach(mission => {
+            const missionItem = document.createElement('div');
+            missionItem.className = 'admin-mission-item';
+            missionItem.innerHTML = `
+                <div class="mission-info">
+                    <span class="mission-title">${mission.title}</span>
+                    <span class="mission-type">${mission.type}</span>
+                    <span class="mission-reward">💎 ${mission.reward}</span>
+                </div>
+                <div class="mission-actions">
+                    <button class="admin-btn-small" onclick="zinoxGame.deleteMission('${mission.id}')">🗑️</button>
+                </div>
+            `;
+            missionsList.appendChild(missionItem);
+        });
+        
+        if (missions.length === 0) {
+            missionsList.innerHTML = '<p class="no-data">Missiyalar topilmadi</p>';
+        }
+    }
+
+    loadGlobalSettings() {
+        const settings = JSON.parse(localStorage.getItem('zinoxGlobalSettings') || '{}');
+        
+        document.getElementById('initialTokens').value = settings.initialTokens || 0;
+        document.getElementById('initialCash').value = settings.initialCash || 0;
+        document.getElementById('autoSaveInterval').value = settings.autoSaveInterval || 30;
+        document.getElementById('tokenCashRate').value = settings.tokenCashRate || 100;
+        document.getElementById('adReward').value = settings.adReward || 5;
+    }
+
+    deleteAd(adId) {
+        const ads = JSON.parse(localStorage.getItem('zinoxAds') || '[]');
+        const filteredAds = ads.filter(ad => ad.id !== adId);
+        localStorage.setItem('zinoxAds', JSON.stringify(filteredAds));
+        this.loadAdsList();
+        this.showNotification('✅ Reklama o\'chirildi!', 'success');
+    }
+
+    deleteMission(missionId) {
+        const missions = JSON.parse(localStorage.getItem('zinoxMissions') || '[]');
+        const filteredMissions = missions.filter(m => m.id !== missionId);
+        localStorage.setItem('zinoxMissions', JSON.stringify(filteredMissions));
+        this.loadMissionsList();
+        this.showNotification('✅ Missiya o\'chirildi!', 'success');
+    }
+
+    logDonation(userId, amount, type) {
+        const donations = JSON.parse(localStorage.getItem('zinoxDonations') || '[]');
+        donations.push({
+            userId: userId,
+            amount: amount,
+            type: type,
+            createdAt: new Date().toISOString()
+        });
+        localStorage.setItem('zinoxDonations', JSON.stringify(donations));
+    }
+
+    logProjectDonation(amount, method, note) {
+        const donations = JSON.parse(localStorage.getItem('zinoxProjectDonations') || '[]');
+        donations.push({
+            amount: amount,
+            method: method,
+            note: note,
+            createdAt: new Date().toISOString()
+        });
+        localStorage.setItem('zinoxProjectDonations', JSON.stringify(donations));
     }
 
     updateOnlineStatus() {
@@ -2029,37 +1578,50 @@ class ZinoxGames {
         }
     }
 
-    // Additional functions (placeholder for future features)
-    loadLeaderboard() {
-        // TODO: Implement leaderboard loading
-        console.log('Loading leaderboard...');
-    }
-
-    loadShopData() {
-        // TODO: Implement shop data loading
-        console.log('Loading shop data...');
-    }
-
-    copyReferralCode() {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(this.gameState.referralCode);
-            this.showNotification('📋 Referal kod nusxalandi!', 'success');
+    async saveGameState() {
+        try {
+            // Save to localStorage
+            localStorage.setItem('zinoxGameState', JSON.stringify(this.gameState));
+            
+            // Save to Supabase if authenticated
+            if (this.gameState.isAuthenticated && this.supabase) {
+                await this.supabase
+                    .from('players')
+                    .upsert({
+                        user_id: this.gameState.userId,
+                        zinox_tokens: this.gameState.zinoxTokens,
+                        cash_balance: this.gameState.cashBalance,
+                        total_clicks: this.gameState.totalClicks,
+                        last_online: new Date().toISOString(),
+                        donate_progress: this.gameState.donateProgress,
+                        total_donated: this.gameState.totalDonated,
+                        donate_count: this.gameState.donateCount
+                    });
+            }
+            
+        } catch (error) {
+            console.error('❌ O\'yin holatini saqlashda xatolik:', error);
         }
     }
 
-    applyReferralCode() {
-        // TODO: Implement referral code application
-        console.log('Applying referral code...');
-    }
-
-    skipAd() {
-        // TODO: Implement ad skipping
-        console.log('Skipping ad...');
-    }
-
-    saveSettings() {
-        // TODO: Implement settings saving
-        console.log('Saving settings...');
+    // Utility functions
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.textContent = message;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            notification.classList.remove('show');
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, 3000);
     }
 }
 
