@@ -1,0 +1,9 @@
+{
+  "name": "zinoxgames",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zinox Games static app and API server for Replit",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

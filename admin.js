@@ -120,6 +120,15 @@ class ZinoxAdminPanel {
         this.elements.cashAmount = document.getElementById('cashAmount');
         this.elements.cashReason = document.getElementById('cashReason');
         this.elements.cashHistory = document.getElementById('cashHistory');
+
+        // Ads
+        this.elements.createAdBtn = document.getElementById('createAdBtn');
+        this.elements.adUploadForm = document.getElementById('adUploadForm');
+        this.elements.adTitle = document.getElementById('adTitle');
+        this.elements.adType = document.getElementById('adType');
+        this.elements.adDuration = document.getElementById('adDuration');
+        this.elements.adFile = document.getElementById('adFile');
+        this.elements.adsList = document.getElementById('adsList');
         
         // System time
         this.elements.systemTime = document.getElementById('systemTime');
@@ -153,6 +162,17 @@ class ZinoxAdminPanel {
         // Cash distribution
         if (this.elements.cashDistributionForm) {
             this.elements.cashDistributionForm.addEventListener('submit', (e) => this.handleCashDistribution(e));
+        }
+
+        if (this.elements.createAdBtn) {
+            this.elements.createAdBtn.addEventListener('click', () => {
+                this.elements.adUploadForm?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                this.elements.adTitle?.focus();
+            });
+        }
+
+        if (this.elements.adUploadForm) {
+            this.elements.adUploadForm.addEventListener('submit', (e) => this.handleAdUpload(e));
         }
         
         // Security
@@ -490,13 +510,13 @@ class ZinoxAdminPanel {
         try {
             const { data: users, error } = await this.supabase
                 .from('players')
-                .select('suspicious_activity, last_online, phone, telegram');
+                .select('id, username, suspicious_activity, last_seen, phone, telegram');
             
             if (error) throw error;
             
             const suspiciousUsers = users.filter(u => u.suspicious_activity);
             const recentLogins = users.filter(u => {
-                const lastOnline = new Date(u.last_online);
+                const lastOnline = new Date(u.last_seen);
                 const hourAgo = new Date(Date.now() - 3600000);
                 return lastOnline > hourAgo;
             });
@@ -507,11 +527,11 @@ class ZinoxAdminPanel {
             
             // Update security table
             const securityLogs = suspiciousUsers.map(user => ({
-                user_id: user.user_id,
+                user_id: user.id,
                 username: user.username || 'Unknown',
                 action: 'Suspicious Activity Detected',
                 ip_address: 'Unknown',
-                created_at: user.last_online
+                created_at: user.last_seen
             }));
             
             this.updateSecurityTable(securityLogs);
@@ -527,7 +547,7 @@ class ZinoxAdminPanel {
         
         tbody.innerHTML = users.slice(0, 10).map(user => `
             <tr>
-                <td>${user.user_id || 'N/A'}</td>
+                <td>${user.id || user.user_id || 'N/A'}</td>
                 <td>${user.username || 'Guest'}</td>
                 <td>${user.phone || 'N/A'}</td>
                 <td>${user.telegram || 'N/A'}</td>
@@ -545,12 +565,12 @@ class ZinoxAdminPanel {
         if (tbody) {
             tbody.innerHTML = earners.map(user => `
                 <tr>
-                    <td>${user.user_id || 'N/A'}</td>
+                    <td>${user.id || user.user_id || 'N/A'}</td>
                     <td>${user.username || 'Guest'}</td>
                     <td>${user.cash_balance || 0}</td>
                     <td>${user.zinox_tokens || 0}</td>
                     <td>${user.referral_earnings || 0}</td>
-                    <td>${new Date(user.join_date || Date.now()).toLocaleDateString()}</td>
+                    <td>${new Date(user.created_at || Date.now()).toLocaleDateString()}</td>
                 </tr>
             `).join('');
             return;
@@ -560,7 +580,7 @@ class ZinoxAdminPanel {
             this.elements.cashHistory.innerHTML = earners.map(user => `
                 <div class="history-item">
                     <strong>${user.username || 'Guest'}</strong>
-                    <span>ID: ${user.user_id || 'N/A'}</span>
+                    <span>ID: ${user.id || user.user_id || 'N/A'}</span>
                     <span>Cash: ${user.cash_balance || 0}</span>
                     <span>Token: ${user.zinox_tokens || 0}</span>
                 </div>
@@ -573,12 +593,12 @@ class ZinoxAdminPanel {
         if (!tbody) return;
         
         tbody.innerHTML = logs.map(log => `
-            <div class="log-item ${log.action.includes('Suspicious') ? 'suspicious' : 'normal'}">
+            <div class="log-item ${String(log.action || log.event_type || log.description || '').includes('Suspicious') ? 'suspicious' : 'normal'}">
                 <div class="log-header">
                     <span class="log-user">${log.username || log.user_id}</span>
                     <span class="log-time">${new Date(log.created_at).toLocaleString()}</span>
                 </div>
-                <div class="log-message">${log.action}</div>
+                <div class="log-message">${log.action || log.description || log.event_type || 'Log'}</div>
             </div>
         `).join('');
     }
@@ -606,10 +626,10 @@ class ZinoxAdminPanel {
         if (tbody) {
             tbody.innerHTML = cashData.slice(0, 10).map(item => `
                 <tr>
-                    <td>${item.user_id || 'N/A'}</td>
-                    <td>${item.username || 'Guest'}</td>
+                    <td>${item.player_username || item.user_id || 'N/A'}</td>
+                    <td>${item.player_username || item.username || 'Guest'}</td>
                     <td>${item.amount || 0}</td>
-                    <td>${item.type || 'Unknown'}</td>
+                    <td>${item.transaction_type || item.type || 'Unknown'}</td>
                     <td>${new Date(item.created_at).toLocaleString()}</td>
                 </tr>
             `).join('');
@@ -619,9 +639,9 @@ class ZinoxAdminPanel {
         if (this.elements.cashHistory) {
             this.elements.cashHistory.innerHTML = cashData.slice(0, 10).map(item => `
                 <div class="history-item">
-                    <strong>${item.username || 'Guest'}</strong>
+                    <strong>${item.player_username || item.username || 'Guest'}</strong>
                     <span>Miqdor: ${item.amount || 0}</span>
-                    <span>Turi: ${item.type || 'Unknown'}</span>
+                    <span>Turi: ${item.transaction_type || item.type || 'Unknown'}</span>
                     <span>${new Date(item.created_at).toLocaleString()}</span>
                 </div>
             `).join('');
@@ -629,7 +649,10 @@ class ZinoxAdminPanel {
     }
 
     updateSecurityDisplay(securityData) {
-        const suspiciousCount = securityData.filter(s => s.action.includes('Suspicious')).length;
+        const suspiciousCount = securityData.filter(s =>
+            String(s.action || s.event_type || s.description || '').includes('Suspicious') ||
+            String(s.severity || '').toLowerCase() === 'critical'
+        ).length;
         this.updateElement('suspiciousUsers', suspiciousCount);
         
         // Update security table
@@ -666,6 +689,21 @@ class ZinoxAdminPanel {
     async loadUsersData() {
         if (!this.supabase) return;
 
+        let bannedUsers = new Set();
+        try {
+            const { data: banLogs, error: banError } = await this.supabase
+                .from('security_logs')
+                .select('player_username, event_type')
+                .in('event_type', ['ban', 'auto_ban'])
+                .limit(500);
+
+            if (!banError) {
+                bannedUsers = new Set((banLogs || []).map(log => log.player_username).filter(Boolean));
+            }
+        } catch (error) {
+            console.warn('⚠️ Ban loglarini yuklab bo\'lmadi:', error);
+        }
+
         const { data, error } = await this.supabase
             .from('players')
             .select('*')
@@ -683,7 +721,9 @@ class ZinoxAdminPanel {
             cashBalance: user.cash_balance || 0,
             totalClicks: user.total_clicks || 0,
             lastOnline: new Date(user.last_seen || user.created_at),
-            status: user.suspicious_activity ? 'suspicious' : (user.is_online ? 'active' : 'offline'),
+            status: bannedUsers.has(user.username)
+                ? 'banned'
+                : (user.suspicious_activity ? 'suspicious' : (user.is_online ? 'active' : 'offline')),
             suspiciousActivity: Boolean(user.suspicious_activity),
             isOnline: Boolean(user.is_online),
             referralEarnings: user.referral_earnings || 0,
@@ -1051,6 +1091,12 @@ class ZinoxAdminPanel {
             case 'logs':
                 await this.loadLogsSection();
                 break;
+            case 'ads':
+                await this.loadAdsSection();
+                break;
+            case 'missions':
+                await this.loadMissionsSection();
+                break;
             case 'settings':
                 await this.loadSettingsSection();
                 break;
@@ -1128,6 +1174,114 @@ class ZinoxAdminPanel {
     async loadAnalyticsSection() {
         // Initialize analytics charts
         this.initializeAnalyticsCharts();
+    }
+
+    async loadAdsSection() {
+        this.renderAdsList();
+    }
+
+    async loadMissionsSection() {
+        const missionsList = document.getElementById('missionsList');
+        if (!missionsList) return;
+
+        const missions = JSON.parse(localStorage.getItem('zinoxMissions') || '[]');
+        missionsList.innerHTML = missions.length
+            ? missions.map(mission => `
+                <div class="admin-mission-item">
+                    <div class="mission-info">
+                        <div class="mission-title">${mission.title}</div>
+                        <div class="mission-type">${mission.type}</div>
+                    </div>
+                    <div class="mission-actions">
+                        <span class="mission-reward">💎 ${mission.reward || 0}</span>
+                    </div>
+                </div>
+            `).join('')
+            : '<div class="history-item">Missiyalar hali qo\'shilmagan</div>';
+    }
+
+    getStoredAds() {
+        return JSON.parse(localStorage.getItem('zinoxAds') || '[]');
+    }
+
+    saveStoredAds(ads) {
+        localStorage.setItem('zinoxAds', JSON.stringify(ads));
+    }
+
+    async handleAdUpload(event) {
+        event.preventDefault();
+
+        const title = this.elements.adTitle?.value.trim();
+        const type = this.elements.adType?.value || 'image';
+        const duration = parseInt(this.elements.adDuration?.value || '15', 10);
+        const file = this.elements.adFile?.files?.[0];
+
+        if (!title || !file || !duration) {
+            this.showNotification('⚠️ Reklama uchun nom, vaqt va fayl kiriting', 'warning');
+            return;
+        }
+
+        const fileToDataUrl = (inputFile) => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('file_read_failed'));
+            reader.readAsDataURL(inputFile);
+        });
+
+        try {
+            const dataUrl = await fileToDataUrl(file);
+            const ads = this.getStoredAds();
+
+            ads.unshift({
+                id: `ad_${Date.now()}`,
+                title,
+                type,
+                duration,
+                data: dataUrl,
+                fileName: file.name,
+                mimeType: file.type,
+                createdAt: new Date().toISOString()
+            });
+
+            this.saveStoredAds(ads);
+            this.elements.adUploadForm?.reset();
+            if (this.elements.adDuration) {
+                this.elements.adDuration.value = '15';
+            }
+            this.renderAdsList();
+            this.showNotification('✅ Reklama fayli saqlandi', 'success');
+        } catch (error) {
+            console.error('❌ Ad upload error:', error);
+            this.showNotification('❌ Reklama yuklashda xatolik', 'error');
+        }
+    }
+
+    renderAdsList() {
+        if (!this.elements.adsList) return;
+
+        const ads = this.getStoredAds();
+        this.elements.adsList.innerHTML = ads.length
+            ? ads.map(ad => `
+                <div class="admin-ad-item">
+                    <div class="ad-info">
+                        <div class="ad-title">${ad.title}</div>
+                        <div class="ad-type">${ad.type.toUpperCase()} · ${ad.duration}s</div>
+                        <div class="ad-duration">${ad.fileName || 'file'}</div>
+                    </div>
+                    <div class="ad-actions">
+                        <button class="action-btn" onclick="window.open('${ad.data}', '_blank')">👁️</button>
+                        <button class="action-btn danger" onclick="zinoxAdmin.deleteAd('${ad.id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('')
+            : '<div class="history-item">Reklamalar hali yuklanmagan</div>';
+    }
+
+    deleteAd(adId) {
+        const nextAds = this.getStoredAds().filter(ad => ad.id !== adId);
+        this.saveStoredAds(nextAds);
+        this.renderAdsList();
+        this.showNotification('✅ Reklama o\'chirildi', 'success');
     }
 
     initializeAnalyticsCharts() {
@@ -1352,7 +1506,7 @@ class ZinoxAdminPanel {
     handleUserSearch() {
         const searchTerm = this.elements.userSearch.value.toLowerCase();
         const filteredUsers = this.users.filter(user => 
-            user.username.toLowerCase().includes(searchTerm)
+            String(user.id || '').toLowerCase().includes(searchTerm)
         );
         this.updateUsersTableWithUsers(filteredUsers);
     }
@@ -1381,21 +1535,24 @@ class ZinoxAdminPanel {
         
         this.elements.usersTableBody.innerHTML = users.map(user => `
             <tr>
+                <td>${user.id}</td>
                 <td>${user.username}</td>
+                <td>${user.phone || 'N/A'}</td>
+                <td>${user.telegram || 'N/A'}</td>
                 <td>${this.formatNumber(user.zinoxTokens)} 💎</td>
                 <td>$${user.cashBalance}</td>
                 <td>${this.formatNumber(user.totalClicks)}</td>
-                <td>${this.formatDate(user.lastOnline)}</td>
                 <td>
                     <span class="user-status ${user.status}">
                         ${user.status === 'active' ? '🟢 Faol' : user.status === 'suspicious' ? '🟡 Shubhali' : '🔴 Bloklangan'}
                     </span>
                 </td>
+                <td>${user.suspiciousActivity ? '⚠️' : '✅'}</td>
                 <td>
                     <div class="action-buttons">
-                        <button class="action-btn" onclick="zinoxAdmin.viewUserDetails(${user.id})">👁️</button>
-                        <button class="action-btn" onclick="zinoxAdmin.editUser(${user.id})">✏️</button>
-                        <button class="action-btn danger" onclick="zinoxAdmin.banUser(${user.id})">🚫</button>
+                        <button class="action-btn" onclick="zinoxAdmin.viewUserDetails('${user.id}')">👁️</button>
+                        <button class="action-btn" onclick="zinoxAdmin.editUser('${user.id}')">✏️</button>
+                        <button class="action-btn danger" onclick="zinoxAdmin.banUser('${user.id}')">🚫</button>
                     </div>
                 </td>
             </tr>
@@ -1415,27 +1572,31 @@ class ZinoxAdminPanel {
         }
         
         try {
+            let targetUsername = targetUser;
+
             if (this.supabase) {
                 const { data: user, error: userError } = await this.supabase
                     .from('players')
-                    .select('username, cash_balance')
-                    .eq('username', targetUser)
+                    .select('id, username, cash_balance')
+                    .eq('id', targetUser)
                     .maybeSingle();
 
                 if (userError) throw userError;
                 if (!user) {
-                    this.showNotification('❌ Foydalanuvchi topilmadi', 'error');
+                    this.showNotification('❌ Bu ID bilan foydalanuvchi topilmadi', 'error');
                     return;
                 }
+
+                targetUsername = user.username;
 
                 const { error: updateError } = await this.supabase
                     .from('players')
                     .update({ cash_balance: (user.cash_balance || 0) + cashAmount, updated_at: new Date().toISOString() })
-                    .eq('username', targetUser);
+                    .eq('id', user.id);
                 if (updateError) throw updateError;
 
                 await this.supabase.from('cash_transactions').insert({
-                    player_username: targetUser,
+                    player_username: user.username,
                     amount: cashAmount,
                     reason: cashReason,
                     admin_username: this.adminState.adminUser,
@@ -1445,7 +1606,7 @@ class ZinoxAdminPanel {
 
             this.elements.cashDistributionForm.reset();
             await this.loadDashboardData();
-            this.showNotification(`✅ ${targetUser} ga $${cashAmount} cash berildi`, 'success');
+            this.showNotification(`✅ ${targetUsername} ga $${cashAmount} cash berildi`, 'success');
         } catch (error) {
             console.error('❌ Cash distribution error:', error);
             this.showNotification('❌ Cash tarqatishda xatolik', 'error');
@@ -1481,12 +1642,50 @@ class ZinoxAdminPanel {
         }
     }
 
-    banUser(userId) {
+    async banUser(userId) {
         const user = this.users.find(u => u.id === userId);
-        if (user) {
+        if (!user) {
+            this.showNotification('❌ Foydalanuvchi topilmadi', 'error');
+            return;
+        }
+
+        try {
+            if (this.supabase) {
+                const { error: updateError } = await this.supabase
+                    .from('players')
+                    .update({
+                        suspicious_activity: true,
+                        is_online: false,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+
+                if (updateError) {
+                    throw updateError;
+                }
+
+                const { error: logError } = await this.supabase
+                    .from('security_logs')
+                    .insert({
+                        player_username: user.username,
+                        event_type: 'ban',
+                        description: `Admin ${this.adminState.adminUser} blocked user ${user.username}`,
+                        severity: 'critical'
+                    });
+
+                if (logError) {
+                    throw logError;
+                }
+            }
+
             user.status = 'banned';
-            this.updateUsersTable();
+            user.suspiciousActivity = true;
+            user.isOnline = false;
+            this.updateUsersTableWithUsers(this.users);
             this.showNotification(`🚫 ${user.username} bloklandi`, 'warning');
+        } catch (error) {
+            console.error('❌ User ban error:', error);
+            this.showNotification('❌ Foydalanuvchini bloklashda xatolik', 'error');
         }
     }
 

@@ -58,16 +58,21 @@ php -S localhost:8000
 
 ## 🌐 Deploy Qilish
 
-### Vercel (Tavsiya etiladi)
+### Replit
 ```bash
-# 1. Vercel.com ga kirish
-# 2. "New Project" tugmasini bosish
-# 3. GitHub repository ni ulash
-# 4. Build settings: 
-#    - Build Command: npm run build (yoki bo'sh)
-#    - Output Directory: . (yoki public)
-# 5. Deploy!
+# 1. Replit da "Create Repl" yoki "Import from GitHub" ni tanlang
+# 2. Shu repository ni import qiling
+# 3. Secrets bo'limiga GROQ_API_KEY qo'shing (ixtiyoriy, chat moderatsiya uchun)
+# 4. Repl avtomatik ravishda `npm start` bilan ishga tushadi
+# 5. Deploy qilish uchun Replit Deployments ni yoqing
 ```
+
+### Lokal Node server
+```bash
+npm start
+```
+
+Bu loyiha `server.js` orqali statik fayllarni ham, `/api/groq-check` endpointini ham bitta joyda ishga tushiradi. Shu sabab `Replit`da `Vercel`ga xos serverless sozlama kerak bo'lmaydi.
 
 ### Netlify
 ```bash

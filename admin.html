@@ -228,6 +228,7 @@
                                     <th>Total Clicks</th>
                                     <th>Status</th>
                                     <th>Risk</th>
+                                    <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="usersTableBody">
@@ -252,8 +253,8 @@
                             <h3>💸 Cash Tarqatish</h3>
                             <form class="cash-form" id="cashDistributionForm">
                                 <div class="form-group">
-                                    <label for="targetUser">Foydalanuvchi:</label>
-                                    <input type="text" id="targetUser" placeholder="Username yoki ID...">
+                                    <label for="targetUser">Foydalanuvchi ID:</label>
+                                    <input type="text" id="targetUser" placeholder="Faqat player ID kiriting...">
                                 </div>
                                 
                                 <div class="form-group">
@@ -413,6 +414,32 @@
                     
                     <div class="ads-controls">
                         <button class="create-ad-btn" id="createAdBtn">+ YANGI REKLAMA</button>
+                    </div>
+
+                    <div class="settings-card">
+                        <h3>📤 Fayl Orqali Reklama Yuklash</h3>
+                        <form class="settings-form" id="adUploadForm">
+                            <div class="form-group">
+                                <label for="adTitle">Reklama nomi:</label>
+                                <input type="text" id="adTitle" placeholder="Masalan: Bahor aksiyasi" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adType">Reklama turi:</label>
+                                <select id="adType">
+                                    <option value="image">Rasm</option>
+                                    <option value="video">Video</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="adDuration">Ko'rinish vaqti (sekund):</label>
+                                <input type="number" id="adDuration" value="15" min="5" max="60" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="adFile">Reklama fayli:</label>
+                                <input type="file" id="adFile" accept="image/*,video/*" required>
+                            </div>
+                            <button type="submit" class="settings-btn">REKLAMANI SAQLASH</button>
+                        </form>
                     </div>
                     
                     <div class="ads-list-container">

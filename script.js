@@ -61,7 +61,7 @@ class ZinoxGames {
             vibrationEnabled: true,
             supabaseUrl: 'https://btwrcgtrelecucwaruvl.supabase.co',
             supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJ0d3JjZ3RyZWxlY3Vjd2FydXZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzMyNzQ5MDAsImV4cCI6MjA0ODg1MDkwMH0.2F0j9fLqzv5kK0xK2jTm3fO1lS7qJ8H9X2aYbW3Zc4',
-            groqApiKey: process.env.GROQ_API_KEY || 'YOUR_GROQ_API_KEY_HERE'
+            groqApiKey: 'YOUR_GROQ_API_KEY_HERE'
         };
 
         // DOM Elements
@@ -270,19 +270,31 @@ class ZinoxGames {
 
     async syncFromSupabase() {
         try {
-            const { data, error } = await this.supabase
+            if (!this.supabase) {
+                return;
+            }
+
+            const normalizedPhone = this.normalizePhoneNumber(this.gameState.phone);
+            let query = this.supabase
                 .from('players')
-                .select('*')
-                .eq('user_id', this.gameState.userId)
-                .single();
+                .select('*');
+
+            if (this.gameState.userId) {
+                query = query.eq('id', this.gameState.userId);
+            } else if (normalizedPhone) {
+                query = query.eq('phone', normalizedPhone);
+            } else {
+                query = query.eq('username', this.gameState.username);
+            }
+
+            const { data, error } = await query.maybeSingle();
             
             if (error && error.code !== 'PGRST116') {
                 throw error;
             }
             
             if (data) {
-                // Update game state with Supabase data
-                this.gameState = { ...this.gameState, ...data };
+                this.mapPlayerRowToGameState(data);
                 console.log('📡 Supabase dan ma\'lumotlar sync qilindi');
             }
             
@@ -446,6 +458,9 @@ class ZinoxGames {
         
         // Initialize anti-cheat
         this.initializeAntiCheat();
+
+        // Render active ad from shared storage
+        this.renderStoredAd();
         
         console.log('⚙️ Tizimlar ishga tushirildi');
     }
@@ -794,6 +809,49 @@ class ZinoxGames {
         
         // Update energy display
         this.updateEnergyDisplay();
+
+        // Keep ad slot in sync with admin uploads
+        this.renderStoredAd();
+    }
+
+    getStoredAds() {
+        return JSON.parse(localStorage.getItem('zinoxAds') || '[]');
+    }
+
+    renderStoredAd() {
+        const ads = this.getStoredAds();
+        const activeAd = ads[0];
+        const adSpace = document.getElementById('adSpace');
+        const adModal = document.getElementById('adModal');
+
+        if (!activeAd) {
+            return;
+        }
+
+        if (adSpace) {
+            adSpace.innerHTML = this.buildAdMarkup(activeAd, false);
+        }
+
+        if (adModal) {
+            const adContent = adModal.querySelector('.ad-placeholder-large');
+            if (adContent) {
+                adContent.innerHTML = this.buildAdMarkup(activeAd, true);
+            }
+        }
+    }
+
+    buildAdMarkup(ad, large = false) {
+        const media = ad.type === 'video'
+            ? `<video src="${ad.data}" class="${large ? 'uploaded-ad-large' : 'uploaded-ad'}" controls playsinline></video>`
+            : `<img src="${ad.data}" alt="${ad.title}" class="${large ? 'uploaded-ad-large' : 'uploaded-ad'}">`;
+
+        return `
+            <div class="uploaded-ad-wrap">
+                ${media}
+                <div class="${large ? 'ad-text-large' : 'ad-text'}">${ad.title}</div>
+                <div class="${large ? 'ad-info-large' : 'ad-info'}">${ad.duration || 15} sekundlik reklama</div>
+            </div>
+        `;
     }
 
     updateEnergyDisplay() {
@@ -878,7 +936,7 @@ class ZinoxGames {
 
     // Authentication functions
     async handleSignIn() {
-        const phone = document.getElementById('signInPhone').value.trim();
+        const phone = this.normalizePhoneNumber(document.getElementById('signInPhone').value.trim());
         const password = document.getElementById('signInPassword').value.trim();
         const nickname = document.getElementById('signInNickname').value.trim();
         const telegram = document.getElementById('signInTelegram').value.trim();
@@ -896,30 +954,73 @@ class ZinoxGames {
         try {
             // Show loading
             this.showNotification('🔄 Kirish amalga oshirilmoqda...', 'info');
-            
-            // Load users from localStorage
-            const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-            const user = users.find(u => u.phone === phone);
-            
+
+            let user = null;
+            const localUsers = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+            const localUser = localUsers.find(u => this.normalizePhoneNumber(u.phone) === phone);
+
+            if (this.supabase) {
+                const { data, error } = await this.supabase
+                    .from('players')
+                    .select('*')
+                    .eq('phone', phone)
+                    .maybeSingle();
+
+                if (error) {
+                    throw error;
+                }
+
+                user = data;
+            } else {
+                user = localUser;
+            }
+
+            if (!user && localUser && this.supabase) {
+                const migratedPayload = {
+                    username: localUser.username,
+                    phone: phone,
+                    telegram: localUser.telegram || null,
+                    password_hash: localUser.password || '',
+                    zinox_tokens: localUser.zinoxTokens || 0,
+                    cash_balance: localUser.cashBalance || 0,
+                    total_clicks: localUser.totalClicks || 0,
+                    referral_code: localUser.referralCode || this.generateReferralCode(),
+                    is_online: true,
+                    last_seen: new Date().toISOString()
+                };
+
+                const { data: migratedUser, error: migrateError } = await this.supabase
+                    .from('players')
+                    .insert(migratedPayload)
+                    .select('*')
+                    .single();
+
+                if (migrateError) {
+                    throw migrateError;
+                }
+
+                user = migratedUser;
+            }
+
             if (!user) {
                 this.showNotification('❌ Foydalanuvchi topilmadi. Ro\'yxatdan o\'ting.', 'error');
                 return;
             }
-            
-            if (user.password !== password) {
+
+            const storedPassword = user.password_hash || user.password;
+            if (storedPassword !== password) {
                 this.showNotification('❌ Parol noto\'g\'ri', 'error');
                 return;
             }
-            
-            // Update game state
-            this.gameState.isAuthenticated = true;
+
+            this.mapPlayerRowToGameState(user);
             this.gameState.phone = phone;
-            this.gameState.username = user.username;
-            this.gameState.userId = user.userId;
-            this.gameState.telegram = user.telegram;
-            this.gameState.cashBalance = user.cashBalance || 0;
-            this.gameState.zinoxTokens = user.zinoxTokens || 0;
-            this.gameState.totalClicks = user.totalClicks || 0;
+            if (nickname) {
+                this.gameState.username = nickname;
+            }
+            if (telegram) {
+                this.gameState.telegram = telegram;
+            }
             
             // Close auth modal
             this.closeModal('auth');
@@ -940,7 +1041,7 @@ class ZinoxGames {
     }
 
     async handleSignUp() {
-        const phone = document.getElementById('signUpPhone').value.trim();
+        const phone = this.normalizePhoneNumber(document.getElementById('signUpPhone').value.trim());
         const password = document.getElementById('signUpPassword').value.trim();
         const confirmPassword = document.getElementById('signUpPasswordConfirm').value.trim();
         const username = document.getElementById('signUpNickname').value.trim();
@@ -964,38 +1065,71 @@ class ZinoxGames {
         try {
             // Show loading
             this.showNotification('🔄 Ro\'yxatdan o\'tilmoqda...', 'info');
-            
-            // Load users from localStorage
-            const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-            
-            if (users.find(u => u.phone === phone)) {
-                this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
-                return;
-            }
-            
-            // Create new user
-            const newUser = {
-                userId: this.generateUserId(),
-                phone: phone,
-                username: username,
-                telegram: telegram,
-                password: password,
-                referralCode: this.gameState.referralCode,
-                zinoxTokens: 0,
-                cashBalance: 0,
-                totalClicks: 0,
-                createdAt: new Date().toISOString()
-            };
-            
-            users.push(newUser);
-            localStorage.setItem('zinoxUsers', JSON.stringify(users));
-            
-            // Update game state
-            this.gameState.isAuthenticated = true;
+
             this.gameState.phone = phone;
             this.gameState.username = username;
             this.gameState.telegram = telegram;
-            this.gameState.userId = newUser.userId;
+            this.gameState.referralCode = this.gameState.referralCode || this.generateReferralCode();
+
+            let createdUser;
+
+            if (this.supabase) {
+                const { data: existingUser, error: existingError } = await this.supabase
+                    .from('players')
+                    .select('id')
+                    .eq('phone', phone)
+                    .maybeSingle();
+
+                if (existingError) {
+                    throw existingError;
+                }
+
+                if (existingUser) {
+                    this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
+                    return;
+                }
+
+                const { data, error } = await this.supabase
+                    .from('players')
+                    .insert(this.buildPlayerPayload({ password_hash: password }))
+                    .select('*')
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                createdUser = data;
+            } else {
+                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+                if (users.find(u => this.normalizePhoneNumber(u.phone) === phone)) {
+                    this.showNotification('❌ Bu telefon raqami allaqachon ro\'yxatdan o\'tgan', 'error');
+                    return;
+                }
+
+                createdUser = {
+                    userId: this.generateUserId(),
+                    phone: phone,
+                    username: username,
+                    telegram: telegram,
+                    password: password,
+                    referralCode: this.gameState.referralCode,
+                    zinoxTokens: 0,
+                    cashBalance: 0,
+                    totalClicks: 0,
+                    createdAt: new Date().toISOString()
+                };
+
+                users.push(createdUser);
+                localStorage.setItem('zinoxUsers', JSON.stringify(users));
+            }
+
+            if (this.supabase) {
+                this.mapPlayerRowToGameState(createdUser);
+            } else {
+                this.gameState.isAuthenticated = true;
+                this.gameState.userId = createdUser.userId;
+            }
             
             // Close auth modal
             this.closeModal('auth');
@@ -1043,6 +1177,83 @@ class ZinoxGames {
         // Uzbek phone number validation
         const phoneRegex = /^(\+998)?(90|91|92|93|94|95|96|97|98|99)\d{7}$/;
         return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
+    }
+
+    normalizePhoneNumber(phone) {
+        const digits = String(phone || '').replace(/\D/g, '');
+        if (digits.startsWith('998')) {
+            return `+${digits}`;
+        }
+        if (digits.length === 9) {
+            return `+998${digits}`;
+        }
+        return String(phone || '').trim();
+    }
+
+    mapPlayerRowToGameState(player) {
+        if (!player) return;
+
+        this.gameState.isAuthenticated = true;
+        this.gameState.userId = player.id || this.gameState.userId;
+        this.gameState.username = player.username || this.gameState.username;
+        this.gameState.phone = player.phone || this.gameState.phone;
+        this.gameState.telegram = player.telegram || this.gameState.telegram;
+        this.gameState.referralCode = player.referral_code || this.gameState.referralCode;
+        this.gameState.referredBy = player.referred_by || this.gameState.referredBy;
+        this.gameState.referralCount = player.referral_count || 0;
+        this.gameState.referralEarnings = player.referral_earnings || 0;
+        this.gameState.zinoxTokens = player.zinox_tokens || 0;
+        this.gameState.cashBalance = player.cash_balance || 0;
+        this.gameState.tapPower = player.tap_power || 1;
+        this.gameState.autoClickerLevel = player.auto_clicker_level || 0;
+        this.gameState.multiplierLevel = player.multiplier_level || 1;
+        this.gameState.comboMasterLevel = player.combo_master_level || 0;
+        this.gameState.totalClicks = player.total_clicks || 0;
+    }
+
+    buildPlayerPayload(overrides = {}) {
+        const payload = {
+            username: this.gameState.username,
+            phone: this.gameState.phone || null,
+            telegram: this.gameState.telegram || null,
+            zinox_tokens: this.gameState.zinoxTokens,
+            cash_balance: this.gameState.cashBalance,
+            tap_power: this.gameState.tapPower,
+            auto_clicker_level: this.gameState.autoClickerLevel,
+            multiplier_level: this.gameState.multiplierLevel,
+            combo_master_level: this.gameState.comboMasterLevel,
+            total_clicks: this.gameState.totalClicks,
+            referral_code: this.gameState.referralCode,
+            referred_by: this.gameState.referredBy,
+            referral_count: this.gameState.referralCount,
+            referral_earnings: this.gameState.referralEarnings,
+            is_online: true,
+            last_seen: new Date().toISOString(),
+            ...overrides
+        };
+
+        if (payload.password_hash === undefined) {
+            delete payload.password_hash;
+        }
+
+        return payload;
+    }
+
+    async fetchSupabaseUsers() {
+        if (!this.supabase) {
+            return JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+        }
+
+        const { data, error } = await this.supabase
+            .from('players')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw error;
+        }
+
+        return data || [];
     }
 
     generateUserId() {
@@ -1186,61 +1397,85 @@ class ZinoxGames {
         this.loadGlobalSettings();
     }
 
-    loadUsersList() {
+    async loadUsersList() {
         const usersList = document.getElementById('adminUsersList');
         if (!usersList) return;
-        
-        // Load users from localStorage
-        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-        
-        // Display users
-        usersList.innerHTML = '';
-        users.forEach(user => {
-            const userItem = document.createElement('div');
-            userItem.className = 'admin-user-item';
-            userItem.innerHTML = `
-                <div class="user-info">
-                    <span class="user-id">ID: ${user.userId}</span>
-                    <span class="user-name">${user.username}</span>
-                    <span class="user-phone">${user.phone}</span>
-                </div>
-                <div class="user-stats">
-                    <span class="user-tokens">💎 ${user.zinoxTokens || 0}</span>
-                    <span class="user-cash">$ ${user.cashBalance || 0}</span>
-                </div>
-            `;
-            usersList.appendChild(userItem);
-        });
-        
-        if (users.length === 0) {
-            usersList.innerHTML = '<p class="no-data">Foydalanuvchilar topilmadi</p>';
+
+        try {
+            const users = await this.fetchSupabaseUsers();
+
+            usersList.innerHTML = '';
+            users.forEach(user => {
+                const userItem = document.createElement('div');
+                userItem.className = 'admin-user-item';
+                userItem.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-id">ID: ${user.id || user.userId || 'N/A'}</span>
+                        <span class="user-name">${user.username || 'Guest'}</span>
+                        <span class="user-phone">${user.phone || 'N/A'}</span>
+                    </div>
+                    <div class="user-stats">
+                        <span class="user-tokens">💎 ${user.zinox_tokens ?? user.zinoxTokens ?? 0}</span>
+                        <span class="user-cash">$ ${user.cash_balance ?? user.cashBalance ?? 0}</span>
+                    </div>
+                `;
+                usersList.appendChild(userItem);
+            });
+
+            if (users.length === 0) {
+                usersList.innerHTML = '<p class="no-data">Foydalanuvchilar topilmadi</p>';
+            }
+        } catch (error) {
+            console.error('❌ Foydalanuvchilarni yuklashda xatolik:', error);
+            usersList.innerHTML = '<p class="no-data">Foydalanuvchilarni yuklab bo\'lmadi</p>';
         }
     }
 
-    searchUser() {
+    async searchUser() {
         const searchInput = document.getElementById('userSearchInput').value.trim();
         if (!searchInput) {
             this.showNotification('❌ Qidiruv so\'zini kiriting!', 'error');
             return;
         }
-        
-        // Search users
-        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-        
-        const foundUser = users.find(user => 
-            user.userId === searchInput || 
-            user.username.toLowerCase().includes(searchInput.toLowerCase())
-        );
-        
-        if (foundUser) {
-            document.getElementById('selectedUserId').value = foundUser.userId;
-            this.showNotification(`✅ Foydalanuvchi topildi: ${foundUser.username}`, 'success');
-        } else {
-            this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+
+        try {
+            let foundUser = null;
+
+            if (this.supabase) {
+                const { data, error } = await this.supabase
+                    .from('players')
+                    .select('*')
+                    .or(`id.eq.${searchInput},username.ilike.%${searchInput}%,phone.ilike.%${searchInput}%`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (error) {
+                    throw error;
+                }
+
+                foundUser = data;
+            } else {
+                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+                foundUser = users.find(user =>
+                    user.userId === searchInput ||
+                    user.username.toLowerCase().includes(searchInput.toLowerCase()) ||
+                    this.normalizePhoneNumber(user.phone).includes(searchInput)
+                );
+            }
+
+            if (foundUser) {
+                document.getElementById('selectedUserId').value = foundUser.username || foundUser.userId || '';
+                this.showNotification(`✅ Foydalanuvchi topildi: ${foundUser.username}`, 'success');
+            } else {
+                this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+            }
+        } catch (error) {
+            console.error('❌ Foydalanuvchi qidirishda xatolik:', error);
+            this.showNotification('❌ Qidiruvda xatolik yuz berdi!', 'error');
         }
     }
 
-    donateToUser() {
+    async donateToUser() {
         const userId = document.getElementById('selectedUserId').value.trim();
         const amount = parseFloat(document.getElementById('donateAmount').value);
         
@@ -1248,33 +1483,65 @@ class ZinoxGames {
             this.showNotification('❌ User ID va miqdorni to\'g\'ri kiriting!', 'error');
             return;
         }
-        
-        // Find user
-        const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
-        
-        const userIndex = users.findIndex(user => user.userId === userId);
-        if (userIndex === -1) {
-            this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
-            return;
+
+        try {
+            let targetUsername = userId;
+
+            if (this.supabase) {
+                const { data: user, error: userError } = await this.supabase
+                    .from('players')
+                    .select('id, username, cash_balance')
+                    .or(`id.eq.${userId},username.eq.${userId}`)
+                    .limit(1)
+                    .maybeSingle();
+
+                if (userError) {
+                    throw userError;
+                }
+
+                if (!user) {
+                    this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+                    return;
+                }
+
+                targetUsername = user.username;
+
+                const { error: updateError } = await this.supabase
+                    .from('players')
+                    .update({
+                        cash_balance: (user.cash_balance || 0) + amount,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', user.id);
+
+                if (updateError) {
+                    throw updateError;
+                }
+            } else {
+                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+                const userIndex = users.findIndex(user => user.userId === userId || user.username === userId);
+
+                if (userIndex === -1) {
+                    this.showNotification('❌ Foydalanuvchi topilmadi!', 'error');
+                    return;
+                }
+
+                users[userIndex].cashBalance = (users[userIndex].cashBalance || 0) + amount;
+                targetUsername = users[userIndex].username;
+                localStorage.setItem('zinoxUsers', JSON.stringify(users));
+            }
+
+            await this.logDonation(targetUsername, amount, 'admin_donate');
+
+            document.getElementById('selectedUserId').value = '';
+            document.getElementById('donateAmount').value = '';
+            await this.loadUsersList();
+
+            this.showNotification(`✅ ${amount} cash ${targetUsername} ga yuborildi!`, 'success');
+        } catch (error) {
+            console.error('❌ Cash yuborishda xatolik:', error);
+            this.showNotification('❌ Cash yuborishda xatolik yuz berdi!', 'error');
         }
-        
-        // Update user balance
-        users[userIndex].cashBalance = (users[userIndex].cashBalance || 0) + amount;
-        
-        // Save users
-        localStorage.setItem('zinoxUsers', JSON.stringify(users));
-        
-        // Log donation
-        this.logDonation(userId, amount, 'admin_donate');
-        
-        // Clear form
-        document.getElementById('selectedUserId').value = '';
-        document.getElementById('donateAmount').value = '';
-        
-        // Refresh users list
-        this.loadUsersList();
-        
-        this.showNotification(`✅ ${amount} cash userga yuborildi!`, 'success');
     }
 
     projectDonate() {
@@ -1417,17 +1684,39 @@ class ZinoxGames {
         this.showNotification('✅ Global sozlamalar saqlandi!', 'success');
     }
 
-    loadDonateStats() {
+    async loadDonateStats() {
         const totalDonates = document.getElementById('totalDonates');
         const lastDonate = document.getElementById('lastDonate');
-        
-        // Get donation stats
-        const donations = JSON.parse(localStorage.getItem('zinoxProjectDonations') || '[]');
-        const total = donations.reduce((sum, d) => sum + d.amount, 0);
-        const last = donations.length > 0 ? donations[donations.length - 1] : null;
-        
-        if (totalDonates) totalDonates.textContent = `${total} $`;
-        if (lastDonate) lastDonate.textContent = last ? new Date(last.createdAt).toLocaleString() : 'Yo\'q';
+
+        try {
+            if (this.supabase) {
+                const { data, error } = await this.supabase
+                    .from('cash_transactions')
+                    .select('amount, created_at, transaction_type')
+                    .eq('transaction_type', 'admin_donate')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    throw error;
+                }
+
+                const total = (data || []).reduce((sum, donation) => sum + (donation.amount || 0), 0);
+                const last = data?.[0] || null;
+
+                if (totalDonates) totalDonates.textContent = `${total} $`;
+                if (lastDonate) lastDonate.textContent = last ? new Date(last.created_at).toLocaleString() : 'Yo\'q';
+                return;
+            }
+
+            const donations = JSON.parse(localStorage.getItem('zinoxProjectDonations') || '[]');
+            const total = donations.reduce((sum, d) => sum + d.amount, 0);
+            const last = donations.length > 0 ? donations[donations.length - 1] : null;
+
+            if (totalDonates) totalDonates.textContent = `${total} $`;
+            if (lastDonate) lastDonate.textContent = last ? new Date(last.createdAt).toLocaleString() : 'Yo\'q';
+        } catch (error) {
+            console.error('❌ Donate statistikani yuklashda xatolik:', error);
+        }
     }
 
     loadAdsList() {
@@ -1512,7 +1801,22 @@ class ZinoxGames {
         this.showNotification('✅ Missiya o\'chirildi!', 'success');
     }
 
-    logDonation(userId, amount, type) {
+    async logDonation(userId, amount, type) {
+        if (this.supabase) {
+            const { error } = await this.supabase.from('cash_transactions').insert({
+                player_username: userId,
+                amount: amount,
+                reason: type,
+                admin_username: this.gameState.username || 'admin',
+                transaction_type: type
+            });
+
+            if (error) {
+                throw error;
+            }
+            return;
+        }
+
         const donations = JSON.parse(localStorage.getItem('zinoxDonations') || '[]');
         donations.push({
             userId: userId,
@@ -1540,9 +1844,9 @@ class ZinoxGames {
                 .from('players')
                 .update({ 
                     is_online: true,
-                    last_online: new Date().toISOString()
+                    last_seen: new Date().toISOString()
                 })
-                .eq('user_id', this.gameState.userId);
+                .eq('id', this.gameState.userId);
         }
     }
 
@@ -1585,18 +1889,42 @@ class ZinoxGames {
             
             // Save to Supabase if authenticated
             if (this.gameState.isAuthenticated && this.supabase) {
-                await this.supabase
-                    .from('players')
-                    .upsert({
-                        user_id: this.gameState.userId,
-                        zinox_tokens: this.gameState.zinoxTokens,
-                        cash_balance: this.gameState.cashBalance,
-                        total_clicks: this.gameState.totalClicks,
-                        last_online: new Date().toISOString(),
-                        donate_progress: this.gameState.donateProgress,
-                        total_donated: this.gameState.totalDonated,
-                        donate_count: this.gameState.donateCount
-                    });
+                const payload = this.buildPlayerPayload();
+                const query = this.gameState.userId
+                    ? this.supabase.from('players').update(payload).eq('id', this.gameState.userId)
+                    : this.supabase.from('players').upsert(payload).select('*');
+
+                const { data, error } = await query;
+
+                if (error) {
+                    throw error;
+                }
+
+                if (Array.isArray(data) && data[0]) {
+                    this.mapPlayerRowToGameState(data[0]);
+                }
+            } else if (this.gameState.isAuthenticated) {
+                const users = JSON.parse(localStorage.getItem('zinoxUsers') || '[]');
+                const userIndex = users.findIndex(user => user.userId === this.gameState.userId || this.normalizePhoneNumber(user.phone) === this.normalizePhoneNumber(this.gameState.phone));
+
+                const fallbackUser = {
+                    userId: this.gameState.userId,
+                    phone: this.gameState.phone,
+                    username: this.gameState.username,
+                    telegram: this.gameState.telegram,
+                    referralCode: this.gameState.referralCode,
+                    zinoxTokens: this.gameState.zinoxTokens,
+                    cashBalance: this.gameState.cashBalance,
+                    totalClicks: this.gameState.totalClicks
+                };
+
+                if (userIndex >= 0) {
+                    users[userIndex] = { ...users[userIndex], ...fallbackUser };
+                } else {
+                    users.push(fallbackUser);
+                }
+
+                localStorage.setItem('zinoxUsers', JSON.stringify(users));
             }
             
         } catch (error) {
